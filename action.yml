@@ -20,10 +20,8 @@ inputs:
     default: "https://push.learningman.top"
 
 runs:
-  using: "composite"
-  steps:
-    - run: curl --data-urlencode "title=${{env.INPUT_TITLE}}" --data-urlencode "content=${{env.INPUT_CONTENT}}" --data-urlencode "long=${{env.INPUT_LONG}}" ${{env.INPUT_API_ENDPOINT}}/${{env.INPUT_USER_ID}}/send
-      shell: bash
+  using: 'node12'
+  main: 'index.js'
 
 branding:
   icon: "cpu"

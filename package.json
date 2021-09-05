@@ -1,0 +1,19 @@
+{
+  "name": "action-notify",
+  "version": "0.0.1",
+  "description": "Use https://github.com/Zxilly/Notify to send notification.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Zxilly/action-notify.git"
+  },
+  "author": "Zxilly",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Zxilly/action-notify/issues"
+  },
+  "homepage": "https://github.com/Zxilly/action-notify#readme"
+}
