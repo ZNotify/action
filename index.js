@@ -26,7 +26,7 @@ if (long !== '') {
 
 url = url.substring(0, url.length - 1)
 
-process.stdout.write(`Request ${url}\n`)
+// process.stdout.write(`Request ${url}\n`)
 
 const req = https.get(url, (res => {
     console.log(`Status: ${res.statusCode}`)
