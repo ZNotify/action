@@ -10,18 +10,18 @@ if (endpoint.startsWith("http://")) {
 
 const https = require('https');
 
-let url = `${endpoint}/${userID}/send`
+let url = `${endpoint}/${userID}/send?`
 
 if (title !== '') {
     url += `title=${title}&`
 }
 
 if (content !== '') {
-    url += `&content=${content}&`
+    url += `content=${content}&`
 }
 
 if (long !== '') {
-    url += `&long=${long}&`
+    url += `long=${long}&`
 }
 
 url = url.substring(0, url.length - 1)
