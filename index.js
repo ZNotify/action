@@ -10,10 +10,23 @@ if (endpoint.startsWith("http://")) {
 
 const https = require('https');
 
-let url = `${endpoint}/${userID}/send` +
-    `?title=${title}` +
-    `&content=${content}` +
-    `&long=${long}`
+let url = `${endpoint}/${userID}/send`
+
+if (title !== '') {
+    url += `title=${title}&`
+}
+
+if (content !== '') {
+    url += `&content=${content}&`
+}
+
+if (long !== '') {
+    url += `&long=${long}&`
+}
+
+url = url.substring(0, url.length - 1)
+
+process.stdout.write(`Request ${url}\n`)
 
 const req = https.get(url, (res => {
     console.log(`Status: ${res.statusCode}`)
