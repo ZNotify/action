@@ -22,7 +22,7 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - run: curl --data-urlencode "title=${INPUT_TITLE}" --data-urlencode "content=${INPUT_CONTENT}" --data-urlencode "long=${INPUT_LONG}" ${INPUT_API_ENDPOINT}/${INPUT_USER_ID}/send
+    - run: curl --data-urlencode "title=${{INPUT_TITLE}}" --data-urlencode "content=${{INPUT_CONTENT}}" --data-urlencode "long=${{INPUT_LONG}}" ${{INPUT_API_ENDPOINT}}/${{INPUT_USER_ID}}/send
       shell: bash
 
 branding:
