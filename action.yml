@@ -1,0 +1,30 @@
+name: "Send Notification"
+author: "Zxilly"
+description: "Send Notification with MiPush"
+inputs:
+  user_id:
+    description: "The user will be notified."
+    required: true
+  content:
+    description: "Notification content."
+    required: true
+  title:
+    description: "Notification title."
+    required: false
+  long:
+    description: "Long notification content."
+    required: false
+  api_endpoint:
+    description: "Push handler server."
+    required: false
+    default: "https://push.learningman.top"
+
+runs:
+  using: "composite"
+  steps:
+    - run: curl --data-urlencode "title=${INPUT_TITLE}" --data-urlencode "content=${INPUT_CONTENT}" --data-urlencode "long=${INPUT_LONG}" ${INPUT_API_ENDPOINT}/${INPUT_USER_ID}/send
+      shell: bash
+
+branding:
+  icon: "cpu"
+  color: "green"
