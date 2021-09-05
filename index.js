@@ -15,7 +15,7 @@ let url = `${endpoint}/${userID}/send` +
     `&content=${content}` +
     `&long=${long}`
 
-https.get(url, (res => {
+const req = https.get(url, (res => {
     console.log(`Status: ${res.statusCode}`)
     if (res.statusCode !== 200) {
         throw new Error('Request Failed')
@@ -25,3 +25,9 @@ https.get(url, (res => {
         process.stdout.write(d)
     })
 }))
+
+req.on('error', error => {
+    console.error(error)
+})
+
+req.end()
