@@ -1,6 +1,6 @@
 {
   "name": "action-notify",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Use https://github.com/Zxilly/Notify to send notification.",
   "main": "index.js",
   "scripts": {
@@ -11,7 +11,7 @@
     "url": "git+https://github.com/Zxilly/action-notify.git"
   },
   "author": "Zxilly",
-  "license": "ISC",
+  "license": "GPL-3.0",
   "bugs": {
     "url": "https://github.com/Zxilly/action-notify/issues"
   },
