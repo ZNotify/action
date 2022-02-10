@@ -5,42 +5,47 @@ const long = process.env.INPUT_LONG
 const endpoint = process.env.INPUT_API_ENDPOINT
 
 if (endpoint.startsWith("http://")) {
-    throw new Error("Only secure server is allowed.")
+    throw new Error("Currently only secure server is allowed.")
 }
 
-const https = require('https');
+var https = require('follow-redirects').https;
+var fs = require('fs');
 
-let url = `${endpoint}/${userID}/send?`
+var qs = require('querystring');
 
-if (title !== '') {
-    url += `title=${title}&`
-}
+var options = {
+    'method': 'POST',
+    'hostname': endpoint,
+    'path': `/${userID}/send`,
+    'headers': {
+        'Content-Type': 'application/x-www-form-urlencoded'
+    },
+    'maxRedirects': 20
+};
 
-if (content !== '') {
-    url += `content=${content}&`
-}
+var req = https.request(options, function (res) {
+    var chunks = [];
 
-if (long !== '') {
-    url += `long=${long}&`
-}
+    res.on("data", function (chunk) {
+        chunks.push(chunk);
+    });
 
-url = url.substring(0, url.length - 1)
+    res.on("end", function (chunk) {
+        var body = Buffer.concat(chunks);
+        console.log(body.toString());
+    });
 
-// process.stdout.write(`Request ${url}\n`)
+    res.on("error", function (error) {
+        console.error(error);
+    });
+});
 
-const req = https.get(url, (res => {
-    console.log(`Status: ${res.statusCode}`)
-    if (res.statusCode !== 200) {
-        throw new Error('Request Failed')
-    }
+var postData = qs.stringify({
+    'title': title,
+    'content': content,
+    'long': long
+});
 
-    res.on('data', d => {
-        process.stdout.write(d)
-    })
-}))
+req.write(postData);
 
-req.on('error', error => {
-    console.error(error)
-})
-
-req.end()
+req.end();
