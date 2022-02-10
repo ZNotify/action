@@ -2,11 +2,13 @@ const userID = process.env.INPUT_USER_ID
 const title = process.env.INPUT_TITLE
 const content = process.env.INPUT_CONTENT
 const long = process.env.INPUT_LONG
-const endpoint = process.env.INPUT_API_ENDPOINT
+let endpoint = process.env.INPUT_API_ENDPOINT
 
 if (endpoint.startsWith("http://")) {
     throw new Error("Currently only secure server is allowed.")
 }
+
+endpoint = endpoint.substring(8);
 
 var https = require('https');
 var fs = require('fs');
