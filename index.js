@@ -8,7 +8,7 @@ if (endpoint.startsWith("http://")) {
     throw new Error("Currently only secure server is allowed.")
 }
 
-var https = require('follow-redirects').https;
+var https = require('https');
 var fs = require('fs');
 
 var qs = require('querystring');
