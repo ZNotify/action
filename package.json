@@ -1,19 +1,19 @@
 {
   "name": "action-notify",
-  "version": "0.0.4",
-  "description": "Use https://github.com/Zxilly/Notify to send notification.",
+  "version": "0.0.6",
+  "description": "Use https://github.com/ZNotify/Notify to send notification.",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Zxilly/action-notify.git"
+    "url": "git+https://github.com/ZNotify/action-notify.git"
   },
   "author": "Zxilly",
   "license": "GPL-3.0",
   "bugs": {
-    "url": "https://github.com/Zxilly/action-notify/issues"
+    "url": "https://github.com/ZNotify/action-notify/issues"
   },
-  "homepage": "https://github.com/Zxilly/action-notify#readme"
+  "homepage": "https://github.com/ZNotify/action-notify#readme"
 }

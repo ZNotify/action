@@ -1,6 +1,6 @@
 name: "Send Notification"
 author: "Zxilly"
-description: "Send Notification with MiPush"
+description: "Send Notification with MiPush and FCM"
 inputs:
   user_id:
     description: "The user will be notified."
