@@ -2,7 +2,6 @@ import typescript from '@rollup/plugin-typescript';
 import resolve from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
 import json from '@rollup/plugin-json';
-import { terser } from 'rollup-plugin-terser';
 
 const input = 'src/index.ts';
 const production = process.env.NODE_ENV === 'production';
@@ -12,7 +11,7 @@ export default {
   output: [
     {
       file: 'dist/index.js',
-      format: 'cjs',
+      format: 'es',
       sourcemap: production,
       exports: 'auto',
     },
@@ -23,11 +22,6 @@ export default {
     json(),
     typescript({
         outDir: 'dist',
-    }),
-    terser({
-      output: {
-        comments: false,
-      },
     }),
   ],
   watch: {
