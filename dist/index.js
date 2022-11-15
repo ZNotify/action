@@ -21298,4 +21298,4 @@ const title = coreExports.getInput('title');
 const long = coreExports.getInput('long');
 const apiEndpoint = coreExports.getInput('api_endpoint');
 Client.create(userID, apiEndpoint)
-    .then(client => client.send(title, content, long));
+    .then(client => client.send(content, title, long));

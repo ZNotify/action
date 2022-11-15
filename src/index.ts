@@ -1,5 +1,5 @@
 import * as core from '@actions/core';
-import { Client } from 'znotify';
+import {Client} from 'znotify';
 
 
 const userID = core.getInput('user_id');
@@ -9,4 +9,4 @@ const long = core.getInput('long');
 const apiEndpoint = core.getInput('api_endpoint');
 
 Client.create(userID, apiEndpoint)
-    .then(client => client.send(title, content, long))
+    .then(client => client.send(content, title, long))
