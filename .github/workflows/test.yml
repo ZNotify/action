@@ -1,0 +1,22 @@
+name: Test
+
+on:
+  push:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup test server
+        uses: ZNotify/test-action@master
+
+      - name: Test action
+        uses: ./
+        with:
+          user_id: test
+          content: test Action
+          api_endpoint: http://127.0.0.1:14444
+
