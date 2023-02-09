@@ -13,6 +13,18 @@ jobs:
       - name: Setup test server
         uses: ZNotify/test-action@master
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 16
+          cache: "yarn"
+
+      - name: Build on pull request
+        if: github.event_name == 'pull_request'
+        run: |
+          yarn install
+          yarn build
+
       - name: Test action
         uses: ./
         with:
@@ -20,3 +32,16 @@ jobs:
           content: test Action
           api_endpoint: http://127.0.0.1:14444
 
+      - name: Commit new files
+        shell: bash
+        run: |
+          git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          # check if there are any changes
+          if [[ -n $(git status --porcelain) ]]; then
+            git add .
+            git commit -m "chore: update dist \n\n[skip ci]"
+            git push
+          else
+            echo "::notice::Dist files are up to date."
+          fi
