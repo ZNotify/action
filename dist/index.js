@@ -15,9 +15,16 @@ import zlib from 'zlib';
 var commonjsGlobal = typeof globalThis !== 'undefined' ? globalThis : typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : {};
 
 function getAugmentedNamespace(n) {
+  if (n.__esModule) return n;
   var f = n.default;
 	if (typeof f == "function") {
-		var a = function () {
+		var a = function a () {
+			if (this instanceof a) {
+				var args = [null];
+				args.push.apply(args, arguments);
+				var Ctor = Function.bind.apply(f, args);
+				return new Ctor();
+			}
 			return f.apply(this, arguments);
 		};
 		a.prototype = f.prototype;
@@ -896,7 +903,11 @@ function checkBypass(reqUrl) {
 }
 proxy.checkBypass = checkBypass;
 
-var tunnel$1 = {exports: {}};
+var tunnelExports = {};
+var tunnel$1 = {
+  get exports(){ return tunnelExports; },
+  set exports(v){ tunnelExports = v; },
+};
 
 var tunnel = {};
 
@@ -1200,7 +1211,7 @@ tunnel.debug = debug$2; // for test
 	const http = __importStar(require$$2$1);
 	const https = __importStar(require$$3);
 	const pm = __importStar(proxy);
-	const tunnel = __importStar(tunnel$1.exports);
+	const tunnel = __importStar(tunnelExports);
 	var HttpCodes;
 	(function (HttpCodes) {
 	    HttpCodes[HttpCodes["OK"] = 200] = "OK";
@@ -3774,7 +3785,11 @@ CombinedStream$1.prototype._emitError = function(err) {
 
 var mimeTypes = {};
 
-var mimeDb = {exports: {}};
+var mimeDbExports = {};
+var mimeDb = {
+  get exports(){ return mimeDbExports; },
+  set exports(v){ mimeDbExports = v; },
+};
 
 var require$$0 = {
 	"application/1d-interleaved-parityfec": {
@@ -14508,7 +14523,7 @@ var require$$0 = {
 	 * @private
 	 */
 
-	var db = mimeDb.exports;
+	var db = mimeDbExports;
 	var extname = require$$0$3.extname;
 
 	/**
@@ -14964,7 +14979,11 @@ function parallel(list, iterator, callback)
   return terminator$1.bind(state, callback);
 }
 
-var serialOrdered$2 = {exports: {}};
+var serialOrderedExports = {};
+var serialOrdered$2 = {
+  get exports(){ return serialOrderedExports; },
+  set exports(v){ serialOrderedExports = v; },
+};
 
 var iterate    = iterate_1
   , initState  = state_1
@@ -14974,8 +14993,8 @@ var iterate    = iterate_1
 // Public API
 serialOrdered$2.exports = serialOrdered$1;
 // sorting helpers
-serialOrdered$2.exports.ascending  = ascending;
-serialOrdered$2.exports.descending = descending;
+serialOrderedExports.ascending  = ascending;
+serialOrderedExports.descending = descending;
 
 /**
  * Runs iterator over provided sorted array elements in series
@@ -15042,7 +15061,7 @@ function descending(a, b)
   return -1 * ascending(a, b);
 }
 
-var serialOrdered = serialOrdered$2.exports;
+var serialOrdered = serialOrderedExports;
 
 // Public API
 var serial_1 = serial;
@@ -15064,7 +15083,7 @@ var asynckit$1 =
 {
   parallel      : parallel_1,
   serial        : serial_1,
-  serialOrdered : serialOrdered$2.exports
+  serialOrdered : serialOrderedExports
 };
 
 // populates missing values
@@ -16804,7 +16823,11 @@ function getEnv(key) {
 
 var getProxyForUrl_1 = getProxyForUrl;
 
-var followRedirects = {exports: {}};
+var followRedirectsExports = {};
+var followRedirects = {
+  get exports(){ return followRedirectsExports; },
+  set exports(v){ followRedirectsExports = v; },
+};
 
 var debug$1;
 
@@ -17442,7 +17465,7 @@ function isBuffer$1(value) {
 
 // Exports
 followRedirects.exports = wrap({ http: http, https: https });
-followRedirects.exports.wrap = wrap;
+followRedirectsExports.wrap = wrap;
 
 const VERSION = "1.3.2";
 
@@ -17926,7 +17949,7 @@ const brotliOptions = {
 
 const isBrotliSupported = utils$3.isFunction(zlib.createBrotliDecompress);
 
-const {http: httpFollow, https: httpsFollow} = followRedirects.exports;
+const {http: httpFollow, https: httpsFollow} = followRedirectsExports;
 
 const isHttps = /https:?/;
 
@@ -20118,7 +20141,11 @@ var getIntrinsic = function GetIntrinsic(name, allowMissing) {
 	return value;
 };
 
-var callBind$1 = {exports: {}};
+var callBindExports = {};
+var callBind$1 = {
+  get exports(){ return callBindExports; },
+  set exports(v){ callBindExports = v; },
+};
 
 (function (module) {
 
@@ -20171,7 +20198,7 @@ var callBind$1 = {exports: {}};
 
 var GetIntrinsic$1 = getIntrinsic;
 
-var callBind = callBind$1.exports;
+var callBind = callBindExports;
 
 var $indexOf = callBind(GetIntrinsic$1('String.prototype.indexOf'));
 
