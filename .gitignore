@@ -31,3 +31,5 @@ fabric.properties
 out
 gen
 node_modules/
+server*/
+data/

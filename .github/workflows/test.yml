@@ -19,8 +19,7 @@ jobs:
           node-version: 16
           cache: "yarn"
 
-      - name: Build on pull request
-        if: github.event_name == 'pull_request'
+      - name: Build
         run: |
           yarn install
           yarn build
