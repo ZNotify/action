@@ -1,7 +1,8 @@
 import require$$0$1 from 'os';
-import require$$0$2 from 'fs';
-import require$$0$3 from 'path';
-import require$$2$1 from 'http';
+import require$$0$3 from 'fs';
+import require$$0$2 from 'crypto';
+import require$$0$4 from 'path';
+import require$$2 from 'http';
 import require$$3 from 'https';
 import 'net';
 import require$$1$1 from 'tls';
@@ -9,38 +10,10 @@ import require$$4 from 'events';
 import require$$5 from 'assert';
 import require$$1, { TextEncoder } from 'util';
 import stream, { Readable } from 'stream';
-import require$$0$4 from 'url';
+import require$$0$5 from 'url';
 import zlib from 'zlib';
 
 var commonjsGlobal = typeof globalThis !== 'undefined' ? globalThis : typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : {};
-
-function getAugmentedNamespace(n) {
-  if (n.__esModule) return n;
-  var f = n.default;
-	if (typeof f == "function") {
-		var a = function a () {
-			if (this instanceof a) {
-				var args = [null];
-				args.push.apply(args, arguments);
-				var Ctor = Function.bind.apply(f, args);
-				return new Ctor();
-			}
-			return f.apply(this, arguments);
-		};
-		a.prototype = f.prototype;
-  } else a = {};
-  Object.defineProperty(a, '__esModule', {value: true});
-	Object.keys(n).forEach(function (k) {
-		var d = Object.getOwnPropertyDescriptor(n, k);
-		Object.defineProperty(a, k, d.get ? d : {
-			enumerable: true,
-			get: function () {
-				return n[k];
-			}
-		});
-	});
-	return a;
-}
 
 var core = {};
 
@@ -180,83 +153,136 @@ function escapeProperty(s) {
 
 var fileCommand = {};
 
-// Unique ID creation requires a high quality random # generator. In the browser we therefore
-// require the crypto API and do not support built-in fallback to lower quality random number
-// generators (like Math.random()).
-var getRandomValues;
-var rnds8 = new Uint8Array(16);
-function rng() {
-  // lazy load so that environments that need to polyfill have a chance to do so
-  if (!getRandomValues) {
-    // getRandomValues needs to be invoked in a context where "this" is a Crypto implementation. Also,
-    // find the complete implementation of crypto (msCrypto) on IE11.
-    getRandomValues = typeof crypto !== 'undefined' && crypto.getRandomValues && crypto.getRandomValues.bind(crypto) || typeof msCrypto !== 'undefined' && typeof msCrypto.getRandomValues === 'function' && msCrypto.getRandomValues.bind(msCrypto);
+var dist = {};
 
-    if (!getRandomValues) {
-      throw new Error('crypto.getRandomValues() not supported. See https://github.com/uuidjs/uuid#getrandomvalues-not-supported');
-    }
+var v1$1 = {};
+
+var rng$1 = {};
+
+Object.defineProperty(rng$1, "__esModule", {
+  value: true
+});
+rng$1.default = rng;
+
+var _crypto$2 = _interopRequireDefault$b(require$$0$2);
+
+function _interopRequireDefault$b(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+const rnds8Pool = new Uint8Array(256); // # of random values to pre-allocate
+
+let poolPtr = rnds8Pool.length;
+
+function rng() {
+  if (poolPtr > rnds8Pool.length - 16) {
+    _crypto$2.default.randomFillSync(rnds8Pool);
+
+    poolPtr = 0;
   }
 
-  return getRandomValues(rnds8);
+  return rnds8Pool.slice(poolPtr, poolPtr += 16);
 }
 
-var REGEX = /^(?:[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}|00000000-0000-0000-0000-000000000000)$/i;
+var stringify$3 = {};
+
+var validate$1 = {};
+
+var regex = {};
+
+Object.defineProperty(regex, "__esModule", {
+  value: true
+});
+regex.default = void 0;
+var _default$c = /^(?:[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}|00000000-0000-0000-0000-000000000000)$/i;
+regex.default = _default$c;
+
+Object.defineProperty(validate$1, "__esModule", {
+  value: true
+});
+validate$1.default = void 0;
+
+var _regex = _interopRequireDefault$a(regex);
+
+function _interopRequireDefault$a(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function validate(uuid) {
-  return typeof uuid === 'string' && REGEX.test(uuid);
+  return typeof uuid === 'string' && _regex.default.test(uuid);
 }
+
+var _default$b = validate;
+validate$1.default = _default$b;
+
+Object.defineProperty(stringify$3, "__esModule", {
+  value: true
+});
+stringify$3.default = void 0;
+
+var _validate$2 = _interopRequireDefault$9(validate$1);
+
+function _interopRequireDefault$9(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 /**
  * Convert array of 16 byte values to UUID string format of the form:
  * XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
  */
+const byteToHex = [];
 
-var byteToHex = [];
-
-for (var i = 0; i < 256; ++i) {
+for (let i = 0; i < 256; ++i) {
   byteToHex.push((i + 0x100).toString(16).substr(1));
 }
 
-function stringify$2(arr) {
-  var offset = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
+function stringify$2(arr, offset = 0) {
   // Note: Be careful editing this code!  It's been tuned for performance
   // and works in ways you may not expect. See https://github.com/uuidjs/uuid/pull/434
-  var uuid = (byteToHex[arr[offset + 0]] + byteToHex[arr[offset + 1]] + byteToHex[arr[offset + 2]] + byteToHex[arr[offset + 3]] + '-' + byteToHex[arr[offset + 4]] + byteToHex[arr[offset + 5]] + '-' + byteToHex[arr[offset + 6]] + byteToHex[arr[offset + 7]] + '-' + byteToHex[arr[offset + 8]] + byteToHex[arr[offset + 9]] + '-' + byteToHex[arr[offset + 10]] + byteToHex[arr[offset + 11]] + byteToHex[arr[offset + 12]] + byteToHex[arr[offset + 13]] + byteToHex[arr[offset + 14]] + byteToHex[arr[offset + 15]]).toLowerCase(); // Consistency check for valid UUID.  If this throws, it's likely due to one
+  const uuid = (byteToHex[arr[offset + 0]] + byteToHex[arr[offset + 1]] + byteToHex[arr[offset + 2]] + byteToHex[arr[offset + 3]] + '-' + byteToHex[arr[offset + 4]] + byteToHex[arr[offset + 5]] + '-' + byteToHex[arr[offset + 6]] + byteToHex[arr[offset + 7]] + '-' + byteToHex[arr[offset + 8]] + byteToHex[arr[offset + 9]] + '-' + byteToHex[arr[offset + 10]] + byteToHex[arr[offset + 11]] + byteToHex[arr[offset + 12]] + byteToHex[arr[offset + 13]] + byteToHex[arr[offset + 14]] + byteToHex[arr[offset + 15]]).toLowerCase(); // Consistency check for valid UUID.  If this throws, it's likely due to one
   // of the following:
   // - One or more input array values don't map to a hex octet (leading to
   // "undefined" in the uuid)
   // - Invalid input values for the RFC `version` or `variant` fields
 
-  if (!validate(uuid)) {
+  if (!(0, _validate$2.default)(uuid)) {
     throw TypeError('Stringified UUID is invalid');
   }
 
   return uuid;
 }
 
+var _default$a = stringify$2;
+stringify$3.default = _default$a;
+
+Object.defineProperty(v1$1, "__esModule", {
+  value: true
+});
+v1$1.default = void 0;
+
+var _rng$1 = _interopRequireDefault$8(rng$1);
+
+var _stringify$2 = _interopRequireDefault$8(stringify$3);
+
+function _interopRequireDefault$8(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+// **`v1()` - Generate time-based UUID**
 //
 // Inspired by https://github.com/LiosK/UUID.js
 // and http://docs.python.org/library/uuid.html
+let _nodeId;
 
-var _nodeId;
-
-var _clockseq; // Previous uuid creation time
+let _clockseq; // Previous uuid creation time
 
 
-var _lastMSecs = 0;
-var _lastNSecs = 0; // See https://github.com/uuidjs/uuid for API details
+let _lastMSecs = 0;
+let _lastNSecs = 0; // See https://github.com/uuidjs/uuid for API details
 
 function v1(options, buf, offset) {
-  var i = buf && offset || 0;
-  var b = buf || new Array(16);
+  let i = buf && offset || 0;
+  const b = buf || new Array(16);
   options = options || {};
-  var node = options.node || _nodeId;
-  var clockseq = options.clockseq !== undefined ? options.clockseq : _clockseq; // node and clockseq need to be initialized to random values if they're not
+  let node = options.node || _nodeId;
+  let clockseq = options.clockseq !== undefined ? options.clockseq : _clockseq; // node and clockseq need to be initialized to random values if they're not
   // specified.  We do this lazily to minimize issues related to insufficient
   // system entropy.  See #189
 
   if (node == null || clockseq == null) {
-    var seedBytes = options.random || (options.rng || rng)();
+    const seedBytes = options.random || (options.rng || _rng$1.default)();
 
     if (node == null) {
       // Per 4.5, create and 48-bit node id, (47 random bits + multicast bit = 1)
@@ -273,12 +299,12 @@ function v1(options, buf, offset) {
   // (100-nanoseconds offset from msecs) since unix epoch, 1970-01-01 00:00.
 
 
-  var msecs = options.msecs !== undefined ? options.msecs : Date.now(); // Per 4.2.1.2, use count of uuid's generated during the current clock
+  let msecs = options.msecs !== undefined ? options.msecs : Date.now(); // Per 4.2.1.2, use count of uuid's generated during the current clock
   // cycle to simulate higher resolution clock
 
-  var nsecs = options.nsecs !== undefined ? options.nsecs : _lastNSecs + 1; // Time since last uuid creation (in msecs)
+  let nsecs = options.nsecs !== undefined ? options.nsecs : _lastNSecs + 1; // Time since last uuid creation (in msecs)
 
-  var dt = msecs - _lastMSecs + (nsecs - _lastNSecs) / 10000; // Per 4.2.1.2, Bump clockseq on clock regression
+  const dt = msecs - _lastMSecs + (nsecs - _lastNSecs) / 10000; // Per 4.2.1.2, Bump clockseq on clock regression
 
   if (dt < 0 && options.clockseq === undefined) {
     clockseq = clockseq + 1 & 0x3fff;
@@ -301,13 +327,13 @@ function v1(options, buf, offset) {
 
   msecs += 12219292800000; // `time_low`
 
-  var tl = ((msecs & 0xfffffff) * 10000 + nsecs) % 0x100000000;
+  const tl = ((msecs & 0xfffffff) * 10000 + nsecs) % 0x100000000;
   b[i++] = tl >>> 24 & 0xff;
   b[i++] = tl >>> 16 & 0xff;
   b[i++] = tl >>> 8 & 0xff;
   b[i++] = tl & 0xff; // `time_mid`
 
-  var tmh = msecs / 0x100000000 * 10000 & 0xfffffff;
+  const tmh = msecs / 0x100000000 * 10000 & 0xfffffff;
   b[i++] = tmh >>> 8 & 0xff;
   b[i++] = tmh & 0xff; // `time_high_and_version`
 
@@ -319,20 +345,38 @@ function v1(options, buf, offset) {
 
   b[i++] = clockseq & 0xff; // `node`
 
-  for (var n = 0; n < 6; ++n) {
+  for (let n = 0; n < 6; ++n) {
     b[i + n] = node[n];
   }
 
-  return buf || stringify$2(b);
+  return buf || (0, _stringify$2.default)(b);
 }
 
+var _default$9 = v1;
+v1$1.default = _default$9;
+
+var v3$1 = {};
+
+var v35 = {};
+
+var parse$3 = {};
+
+Object.defineProperty(parse$3, "__esModule", {
+  value: true
+});
+parse$3.default = void 0;
+
+var _validate$1 = _interopRequireDefault$7(validate$1);
+
+function _interopRequireDefault$7(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
 function parse$2(uuid) {
-  if (!validate(uuid)) {
+  if (!(0, _validate$1.default)(uuid)) {
     throw TypeError('Invalid UUID');
   }
 
-  var v;
-  var arr = new Uint8Array(16); // Parse ########-....-....-....-............
+  let v;
+  const arr = new Uint8Array(16); // Parse ########-....-....-....-............
 
   arr[0] = (v = parseInt(uuid.slice(0, 8), 16)) >>> 24;
   arr[1] = v >>> 16 & 0xff;
@@ -358,28 +402,46 @@ function parse$2(uuid) {
   return arr;
 }
 
+var _default$8 = parse$2;
+parse$3.default = _default$8;
+
+Object.defineProperty(v35, "__esModule", {
+  value: true
+});
+v35.default = _default$7;
+v35.URL = v35.DNS = void 0;
+
+var _stringify$1 = _interopRequireDefault$6(stringify$3);
+
+var _parse = _interopRequireDefault$6(parse$3);
+
+function _interopRequireDefault$6(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
 function stringToBytes(str) {
   str = unescape(encodeURIComponent(str)); // UTF8 escape
 
-  var bytes = [];
+  const bytes = [];
 
-  for (var i = 0; i < str.length; ++i) {
+  for (let i = 0; i < str.length; ++i) {
     bytes.push(str.charCodeAt(i));
   }
 
   return bytes;
 }
 
-var DNS = '6ba7b810-9dad-11d1-80b4-00c04fd430c8';
-var URL$2 = '6ba7b811-9dad-11d1-80b4-00c04fd430c8';
-function v35 (name, version, hashfunc) {
+const DNS = '6ba7b810-9dad-11d1-80b4-00c04fd430c8';
+v35.DNS = DNS;
+const URL$2 = '6ba7b811-9dad-11d1-80b4-00c04fd430c8';
+v35.URL = URL$2;
+
+function _default$7(name, version, hashfunc) {
   function generateUUID(value, namespace, buf, offset) {
     if (typeof value === 'string') {
       value = stringToBytes(value);
     }
 
     if (typeof namespace === 'string') {
-      namespace = parse$2(namespace);
+      namespace = (0, _parse.default)(namespace);
     }
 
     if (namespace.length !== 16) {
@@ -389,7 +451,7 @@ function v35 (name, version, hashfunc) {
     // hashfunc([...namespace, ... value])`
 
 
-    var bytes = new Uint8Array(16 + value.length);
+    let bytes = new Uint8Array(16 + value.length);
     bytes.set(namespace);
     bytes.set(value, namespace.length);
     bytes = hashfunc(bytes);
@@ -399,14 +461,14 @@ function v35 (name, version, hashfunc) {
     if (buf) {
       offset = offset || 0;
 
-      for (var i = 0; i < 16; ++i) {
+      for (let i = 0; i < 16; ++i) {
         buf[offset + i] = bytes[i];
       }
 
       return buf;
     }
 
-    return stringify$2(bytes);
+    return (0, _stringify$1.default)(bytes);
   } // Function#name is not settable on some platforms (#270)
 
 
@@ -420,226 +482,63 @@ function v35 (name, version, hashfunc) {
   return generateUUID;
 }
 
-/*
- * Browser-compatible JavaScript MD5
- *
- * Modification of JavaScript MD5
- * https://github.com/blueimp/JavaScript-MD5
- *
- * Copyright 2011, Sebastian Tschan
- * https://blueimp.net
- *
- * Licensed under the MIT license:
- * https://opensource.org/licenses/MIT
- *
- * Based on
- * A JavaScript implementation of the RSA Data Security, Inc. MD5 Message
- * Digest Algorithm, as defined in RFC 1321.
- * Version 2.2 Copyright (C) Paul Johnston 1999 - 2009
- * Other contributors: Greg Holt, Andrew Kepert, Ydnar, Lostinet
- * Distributed under the BSD License
- * See http://pajhome.org.uk/crypt/md5 for more info.
- */
+var md5$1 = {};
+
+Object.defineProperty(md5$1, "__esModule", {
+  value: true
+});
+md5$1.default = void 0;
+
+var _crypto$1 = _interopRequireDefault$5(require$$0$2);
+
+function _interopRequireDefault$5(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
 function md5(bytes) {
-  if (typeof bytes === 'string') {
-    var msg = unescape(encodeURIComponent(bytes)); // UTF8 escape
-
-    bytes = new Uint8Array(msg.length);
-
-    for (var i = 0; i < msg.length; ++i) {
-      bytes[i] = msg.charCodeAt(i);
-    }
+  if (Array.isArray(bytes)) {
+    bytes = Buffer.from(bytes);
+  } else if (typeof bytes === 'string') {
+    bytes = Buffer.from(bytes, 'utf8');
   }
 
-  return md5ToHexEncodedArray(wordsToMd5(bytesToWords(bytes), bytes.length * 8));
-}
-/*
- * Convert an array of little-endian words to an array of bytes
- */
-
-
-function md5ToHexEncodedArray(input) {
-  var output = [];
-  var length32 = input.length * 32;
-  var hexTab = '0123456789abcdef';
-
-  for (var i = 0; i < length32; i += 8) {
-    var x = input[i >> 5] >>> i % 32 & 0xff;
-    var hex = parseInt(hexTab.charAt(x >>> 4 & 0x0f) + hexTab.charAt(x & 0x0f), 16);
-    output.push(hex);
-  }
-
-  return output;
-}
-/**
- * Calculate output length with padding and bit length
- */
-
-
-function getOutputLength(inputLength8) {
-  return (inputLength8 + 64 >>> 9 << 4) + 14 + 1;
-}
-/*
- * Calculate the MD5 of an array of little-endian words, and a bit length.
- */
-
-
-function wordsToMd5(x, len) {
-  /* append padding */
-  x[len >> 5] |= 0x80 << len % 32;
-  x[getOutputLength(len) - 1] = len;
-  var a = 1732584193;
-  var b = -271733879;
-  var c = -1732584194;
-  var d = 271733878;
-
-  for (var i = 0; i < x.length; i += 16) {
-    var olda = a;
-    var oldb = b;
-    var oldc = c;
-    var oldd = d;
-    a = md5ff(a, b, c, d, x[i], 7, -680876936);
-    d = md5ff(d, a, b, c, x[i + 1], 12, -389564586);
-    c = md5ff(c, d, a, b, x[i + 2], 17, 606105819);
-    b = md5ff(b, c, d, a, x[i + 3], 22, -1044525330);
-    a = md5ff(a, b, c, d, x[i + 4], 7, -176418897);
-    d = md5ff(d, a, b, c, x[i + 5], 12, 1200080426);
-    c = md5ff(c, d, a, b, x[i + 6], 17, -1473231341);
-    b = md5ff(b, c, d, a, x[i + 7], 22, -45705983);
-    a = md5ff(a, b, c, d, x[i + 8], 7, 1770035416);
-    d = md5ff(d, a, b, c, x[i + 9], 12, -1958414417);
-    c = md5ff(c, d, a, b, x[i + 10], 17, -42063);
-    b = md5ff(b, c, d, a, x[i + 11], 22, -1990404162);
-    a = md5ff(a, b, c, d, x[i + 12], 7, 1804603682);
-    d = md5ff(d, a, b, c, x[i + 13], 12, -40341101);
-    c = md5ff(c, d, a, b, x[i + 14], 17, -1502002290);
-    b = md5ff(b, c, d, a, x[i + 15], 22, 1236535329);
-    a = md5gg(a, b, c, d, x[i + 1], 5, -165796510);
-    d = md5gg(d, a, b, c, x[i + 6], 9, -1069501632);
-    c = md5gg(c, d, a, b, x[i + 11], 14, 643717713);
-    b = md5gg(b, c, d, a, x[i], 20, -373897302);
-    a = md5gg(a, b, c, d, x[i + 5], 5, -701558691);
-    d = md5gg(d, a, b, c, x[i + 10], 9, 38016083);
-    c = md5gg(c, d, a, b, x[i + 15], 14, -660478335);
-    b = md5gg(b, c, d, a, x[i + 4], 20, -405537848);
-    a = md5gg(a, b, c, d, x[i + 9], 5, 568446438);
-    d = md5gg(d, a, b, c, x[i + 14], 9, -1019803690);
-    c = md5gg(c, d, a, b, x[i + 3], 14, -187363961);
-    b = md5gg(b, c, d, a, x[i + 8], 20, 1163531501);
-    a = md5gg(a, b, c, d, x[i + 13], 5, -1444681467);
-    d = md5gg(d, a, b, c, x[i + 2], 9, -51403784);
-    c = md5gg(c, d, a, b, x[i + 7], 14, 1735328473);
-    b = md5gg(b, c, d, a, x[i + 12], 20, -1926607734);
-    a = md5hh(a, b, c, d, x[i + 5], 4, -378558);
-    d = md5hh(d, a, b, c, x[i + 8], 11, -2022574463);
-    c = md5hh(c, d, a, b, x[i + 11], 16, 1839030562);
-    b = md5hh(b, c, d, a, x[i + 14], 23, -35309556);
-    a = md5hh(a, b, c, d, x[i + 1], 4, -1530992060);
-    d = md5hh(d, a, b, c, x[i + 4], 11, 1272893353);
-    c = md5hh(c, d, a, b, x[i + 7], 16, -155497632);
-    b = md5hh(b, c, d, a, x[i + 10], 23, -1094730640);
-    a = md5hh(a, b, c, d, x[i + 13], 4, 681279174);
-    d = md5hh(d, a, b, c, x[i], 11, -358537222);
-    c = md5hh(c, d, a, b, x[i + 3], 16, -722521979);
-    b = md5hh(b, c, d, a, x[i + 6], 23, 76029189);
-    a = md5hh(a, b, c, d, x[i + 9], 4, -640364487);
-    d = md5hh(d, a, b, c, x[i + 12], 11, -421815835);
-    c = md5hh(c, d, a, b, x[i + 15], 16, 530742520);
-    b = md5hh(b, c, d, a, x[i + 2], 23, -995338651);
-    a = md5ii(a, b, c, d, x[i], 6, -198630844);
-    d = md5ii(d, a, b, c, x[i + 7], 10, 1126891415);
-    c = md5ii(c, d, a, b, x[i + 14], 15, -1416354905);
-    b = md5ii(b, c, d, a, x[i + 5], 21, -57434055);
-    a = md5ii(a, b, c, d, x[i + 12], 6, 1700485571);
-    d = md5ii(d, a, b, c, x[i + 3], 10, -1894986606);
-    c = md5ii(c, d, a, b, x[i + 10], 15, -1051523);
-    b = md5ii(b, c, d, a, x[i + 1], 21, -2054922799);
-    a = md5ii(a, b, c, d, x[i + 8], 6, 1873313359);
-    d = md5ii(d, a, b, c, x[i + 15], 10, -30611744);
-    c = md5ii(c, d, a, b, x[i + 6], 15, -1560198380);
-    b = md5ii(b, c, d, a, x[i + 13], 21, 1309151649);
-    a = md5ii(a, b, c, d, x[i + 4], 6, -145523070);
-    d = md5ii(d, a, b, c, x[i + 11], 10, -1120210379);
-    c = md5ii(c, d, a, b, x[i + 2], 15, 718787259);
-    b = md5ii(b, c, d, a, x[i + 9], 21, -343485551);
-    a = safeAdd(a, olda);
-    b = safeAdd(b, oldb);
-    c = safeAdd(c, oldc);
-    d = safeAdd(d, oldd);
-  }
-
-  return [a, b, c, d];
-}
-/*
- * Convert an array bytes to an array of little-endian words
- * Characters >255 have their high-byte silently ignored.
- */
-
-
-function bytesToWords(input) {
-  if (input.length === 0) {
-    return [];
-  }
-
-  var length8 = input.length * 8;
-  var output = new Uint32Array(getOutputLength(length8));
-
-  for (var i = 0; i < length8; i += 8) {
-    output[i >> 5] |= (input[i / 8] & 0xff) << i % 32;
-  }
-
-  return output;
-}
-/*
- * Add integers, wrapping at 2^32. This uses 16-bit operations internally
- * to work around bugs in some JS interpreters.
- */
-
-
-function safeAdd(x, y) {
-  var lsw = (x & 0xffff) + (y & 0xffff);
-  var msw = (x >> 16) + (y >> 16) + (lsw >> 16);
-  return msw << 16 | lsw & 0xffff;
-}
-/*
- * Bitwise rotate a 32-bit number to the left.
- */
-
-
-function bitRotateLeft(num, cnt) {
-  return num << cnt | num >>> 32 - cnt;
-}
-/*
- * These functions implement the four basic operations the algorithm uses.
- */
-
-
-function md5cmn(q, a, b, x, s, t) {
-  return safeAdd(bitRotateLeft(safeAdd(safeAdd(a, q), safeAdd(x, t)), s), b);
+  return _crypto$1.default.createHash('md5').update(bytes).digest();
 }
 
-function md5ff(a, b, c, d, x, s, t) {
-  return md5cmn(b & c | ~b & d, a, b, x, s, t);
-}
+var _default$6 = md5;
+md5$1.default = _default$6;
 
-function md5gg(a, b, c, d, x, s, t) {
-  return md5cmn(b & d | c & ~d, a, b, x, s, t);
-}
+Object.defineProperty(v3$1, "__esModule", {
+  value: true
+});
+v3$1.default = void 0;
 
-function md5hh(a, b, c, d, x, s, t) {
-  return md5cmn(b ^ c ^ d, a, b, x, s, t);
-}
+var _v$1 = _interopRequireDefault$4(v35);
 
-function md5ii(a, b, c, d, x, s, t) {
-  return md5cmn(c ^ (b | ~d), a, b, x, s, t);
-}
+var _md = _interopRequireDefault$4(md5$1);
 
-var v3 = v35('v3', 0x30, md5);
-var v3$1 = v3;
+function _interopRequireDefault$4(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+const v3 = (0, _v$1.default)('v3', 0x30, _md.default);
+var _default$5 = v3;
+v3$1.default = _default$5;
+
+var v4$1 = {};
+
+Object.defineProperty(v4$1, "__esModule", {
+  value: true
+});
+v4$1.default = void 0;
+
+var _rng = _interopRequireDefault$3(rng$1);
+
+var _stringify = _interopRequireDefault$3(stringify$3);
+
+function _interopRequireDefault$3(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function v4(options, buf, offset) {
   options = options || {};
-  var rnds = options.random || (options.rng || rng)(); // Per 4.4, set bits for version and `clock_seq_hi_and_reserved`
+
+  const rnds = options.random || (options.rng || _rng.default)(); // Per 4.4, set bits for version and `clock_seq_hi_and_reserved`
+
 
   rnds[6] = rnds[6] & 0x0f | 0x40;
   rnds[8] = rnds[8] & 0x3f | 0x80; // Copy bytes to buffer, if provided
@@ -647,138 +546,171 @@ function v4(options, buf, offset) {
   if (buf) {
     offset = offset || 0;
 
-    for (var i = 0; i < 16; ++i) {
+    for (let i = 0; i < 16; ++i) {
       buf[offset + i] = rnds[i];
     }
 
     return buf;
   }
 
-  return stringify$2(rnds);
+  return (0, _stringify.default)(rnds);
 }
 
-// Adapted from Chris Veness' SHA1 code at
-// http://www.movable-type.co.uk/scripts/sha1.html
-function f(s, x, y, z) {
-  switch (s) {
-    case 0:
-      return x & y ^ ~x & z;
+var _default$4 = v4;
+v4$1.default = _default$4;
 
-    case 1:
-      return x ^ y ^ z;
+var v5$1 = {};
 
-    case 2:
-      return x & y ^ x & z ^ y & z;
+var sha1$1 = {};
 
-    case 3:
-      return x ^ y ^ z;
-  }
-}
+Object.defineProperty(sha1$1, "__esModule", {
+  value: true
+});
+sha1$1.default = void 0;
 
-function ROTL(x, n) {
-  return x << n | x >>> 32 - n;
-}
+var _crypto = _interopRequireDefault$2(require$$0$2);
+
+function _interopRequireDefault$2(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function sha1(bytes) {
-  var K = [0x5a827999, 0x6ed9eba1, 0x8f1bbcdc, 0xca62c1d6];
-  var H = [0x67452301, 0xefcdab89, 0x98badcfe, 0x10325476, 0xc3d2e1f0];
-
-  if (typeof bytes === 'string') {
-    var msg = unescape(encodeURIComponent(bytes)); // UTF8 escape
-
-    bytes = [];
-
-    for (var i = 0; i < msg.length; ++i) {
-      bytes.push(msg.charCodeAt(i));
-    }
-  } else if (!Array.isArray(bytes)) {
-    // Convert Array-like to Array
-    bytes = Array.prototype.slice.call(bytes);
+  if (Array.isArray(bytes)) {
+    bytes = Buffer.from(bytes);
+  } else if (typeof bytes === 'string') {
+    bytes = Buffer.from(bytes, 'utf8');
   }
 
-  bytes.push(0x80);
-  var l = bytes.length / 4 + 2;
-  var N = Math.ceil(l / 16);
-  var M = new Array(N);
-
-  for (var _i = 0; _i < N; ++_i) {
-    var arr = new Uint32Array(16);
-
-    for (var j = 0; j < 16; ++j) {
-      arr[j] = bytes[_i * 64 + j * 4] << 24 | bytes[_i * 64 + j * 4 + 1] << 16 | bytes[_i * 64 + j * 4 + 2] << 8 | bytes[_i * 64 + j * 4 + 3];
-    }
-
-    M[_i] = arr;
-  }
-
-  M[N - 1][14] = (bytes.length - 1) * 8 / Math.pow(2, 32);
-  M[N - 1][14] = Math.floor(M[N - 1][14]);
-  M[N - 1][15] = (bytes.length - 1) * 8 & 0xffffffff;
-
-  for (var _i2 = 0; _i2 < N; ++_i2) {
-    var W = new Uint32Array(80);
-
-    for (var t = 0; t < 16; ++t) {
-      W[t] = M[_i2][t];
-    }
-
-    for (var _t = 16; _t < 80; ++_t) {
-      W[_t] = ROTL(W[_t - 3] ^ W[_t - 8] ^ W[_t - 14] ^ W[_t - 16], 1);
-    }
-
-    var a = H[0];
-    var b = H[1];
-    var c = H[2];
-    var d = H[3];
-    var e = H[4];
-
-    for (var _t2 = 0; _t2 < 80; ++_t2) {
-      var s = Math.floor(_t2 / 20);
-      var T = ROTL(a, 5) + f(s, b, c, d) + e + K[s] + W[_t2] >>> 0;
-      e = d;
-      d = c;
-      c = ROTL(b, 30) >>> 0;
-      b = a;
-      a = T;
-    }
-
-    H[0] = H[0] + a >>> 0;
-    H[1] = H[1] + b >>> 0;
-    H[2] = H[2] + c >>> 0;
-    H[3] = H[3] + d >>> 0;
-    H[4] = H[4] + e >>> 0;
-  }
-
-  return [H[0] >> 24 & 0xff, H[0] >> 16 & 0xff, H[0] >> 8 & 0xff, H[0] & 0xff, H[1] >> 24 & 0xff, H[1] >> 16 & 0xff, H[1] >> 8 & 0xff, H[1] & 0xff, H[2] >> 24 & 0xff, H[2] >> 16 & 0xff, H[2] >> 8 & 0xff, H[2] & 0xff, H[3] >> 24 & 0xff, H[3] >> 16 & 0xff, H[3] >> 8 & 0xff, H[3] & 0xff, H[4] >> 24 & 0xff, H[4] >> 16 & 0xff, H[4] >> 8 & 0xff, H[4] & 0xff];
+  return _crypto.default.createHash('sha1').update(bytes).digest();
 }
 
-var v5 = v35('v5', 0x50, sha1);
-var v5$1 = v5;
+var _default$3 = sha1;
+sha1$1.default = _default$3;
 
-var nil = '00000000-0000-0000-0000-000000000000';
+Object.defineProperty(v5$1, "__esModule", {
+  value: true
+});
+v5$1.default = void 0;
+
+var _v = _interopRequireDefault$1(v35);
+
+var _sha = _interopRequireDefault$1(sha1$1);
+
+function _interopRequireDefault$1(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+const v5 = (0, _v.default)('v5', 0x50, _sha.default);
+var _default$2 = v5;
+v5$1.default = _default$2;
+
+var nil = {};
+
+Object.defineProperty(nil, "__esModule", {
+  value: true
+});
+nil.default = void 0;
+var _default$1 = '00000000-0000-0000-0000-000000000000';
+nil.default = _default$1;
+
+var version$2 = {};
+
+Object.defineProperty(version$2, "__esModule", {
+  value: true
+});
+version$2.default = void 0;
+
+var _validate = _interopRequireDefault(validate$1);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function version$1(uuid) {
-  if (!validate(uuid)) {
+  if (!(0, _validate.default)(uuid)) {
     throw TypeError('Invalid UUID');
   }
 
   return parseInt(uuid.substr(14, 1), 16);
 }
 
-var esmBrowser = /*#__PURE__*/Object.freeze({
-	__proto__: null,
-	NIL: nil,
-	parse: parse$2,
-	stringify: stringify$2,
-	v1: v1,
-	v3: v3$1,
-	v4: v4,
-	v5: v5$1,
-	validate: validate,
-	version: version$1
-});
+var _default = version$1;
+version$2.default = _default;
 
-var require$$2 = /*@__PURE__*/getAugmentedNamespace(esmBrowser);
+(function (exports) {
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	Object.defineProperty(exports, "v1", {
+	  enumerable: true,
+	  get: function () {
+	    return _v.default;
+	  }
+	});
+	Object.defineProperty(exports, "v3", {
+	  enumerable: true,
+	  get: function () {
+	    return _v2.default;
+	  }
+	});
+	Object.defineProperty(exports, "v4", {
+	  enumerable: true,
+	  get: function () {
+	    return _v3.default;
+	  }
+	});
+	Object.defineProperty(exports, "v5", {
+	  enumerable: true,
+	  get: function () {
+	    return _v4.default;
+	  }
+	});
+	Object.defineProperty(exports, "NIL", {
+	  enumerable: true,
+	  get: function () {
+	    return _nil.default;
+	  }
+	});
+	Object.defineProperty(exports, "version", {
+	  enumerable: true,
+	  get: function () {
+	    return _version.default;
+	  }
+	});
+	Object.defineProperty(exports, "validate", {
+	  enumerable: true,
+	  get: function () {
+	    return _validate.default;
+	  }
+	});
+	Object.defineProperty(exports, "stringify", {
+	  enumerable: true,
+	  get: function () {
+	    return _stringify.default;
+	  }
+	});
+	Object.defineProperty(exports, "parse", {
+	  enumerable: true,
+	  get: function () {
+	    return _parse.default;
+	  }
+	});
+
+	var _v = _interopRequireDefault(v1$1);
+
+	var _v2 = _interopRequireDefault(v3$1);
+
+	var _v3 = _interopRequireDefault(v4$1);
+
+	var _v4 = _interopRequireDefault(v5$1);
+
+	var _nil = _interopRequireDefault(nil);
+
+	var _version = _interopRequireDefault(version$2);
+
+	var _validate = _interopRequireDefault(validate$1);
+
+	var _stringify = _interopRequireDefault(stringify$3);
+
+	var _parse = _interopRequireDefault(parse$3);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+} (dist));
 
 // For internal use, subject to change.
 var __createBinding = (commonjsGlobal && commonjsGlobal.__createBinding) || (Object.create ? (function(o, m, k, k2) {
@@ -804,9 +736,9 @@ Object.defineProperty(fileCommand, "__esModule", { value: true });
 fileCommand.prepareKeyValueMessage = fileCommand.issueFileCommand = void 0;
 // We use any as a valid input type
 /* eslint-disable @typescript-eslint/no-explicit-any */
-const fs$1 = __importStar(require$$0$2);
+const fs$1 = __importStar(require$$0$3);
 const os = __importStar(require$$0$1);
-const uuid_1 = require$$2;
+const uuid_1 = dist;
 const utils_1 = utils$4;
 function issueFileCommand(command, message) {
     const filePath = process.env[`GITHUB_${command}`];
@@ -903,16 +835,12 @@ function checkBypass(reqUrl) {
 }
 proxy.checkBypass = checkBypass;
 
-var tunnelExports = {};
-var tunnel$1 = {
-  get exports(){ return tunnelExports; },
-  set exports(v){ tunnelExports = v; },
-};
+var tunnel$1 = {exports: {}};
 
 var tunnel = {};
 
 var tls = require$$1$1;
-var http$2 = require$$2$1;
+var http$2 = require$$2;
 var https$2 = require$$3;
 var events$1 = require$$4;
 var util$3 = require$$1;
@@ -1208,10 +1136,10 @@ tunnel.debug = debug$2; // for test
 	};
 	Object.defineProperty(exports, "__esModule", { value: true });
 	exports.HttpClient = exports.isHttps = exports.HttpClientResponse = exports.HttpClientError = exports.getProxyUrl = exports.MediaTypes = exports.Headers = exports.HttpCodes = void 0;
-	const http = __importStar(require$$2$1);
+	const http = __importStar(require$$2);
 	const https = __importStar(require$$3);
 	const pm = __importStar(proxy);
-	const tunnel = __importStar(tunnelExports);
+	const tunnel = __importStar(tunnel$1.exports);
 	var HttpCodes;
 	(function (HttpCodes) {
 	    HttpCodes[HttpCodes["OK"] = 200] = "OK";
@@ -1969,7 +1897,7 @@ function requireSummary () {
 		Object.defineProperty(exports, "__esModule", { value: true });
 		exports.summary = exports.markdownSummary = exports.SUMMARY_DOCS_URL = exports.SUMMARY_ENV_VAR = void 0;
 		const os_1 = require$$0$1;
-		const fs_1 = require$$0$2;
+		const fs_1 = require$$0$3;
 		const { access, appendFile, writeFile } = fs_1.promises;
 		exports.SUMMARY_ENV_VAR = 'GITHUB_STEP_SUMMARY';
 		exports.SUMMARY_DOCS_URL = 'https://docs.github.com/actions/using-workflows/workflow-commands-for-github-actions#adding-a-job-summary';
@@ -2271,7 +2199,7 @@ function requirePathUtils () {
 	};
 	Object.defineProperty(pathUtils, "__esModule", { value: true });
 	pathUtils.toPlatformPath = pathUtils.toWin32Path = pathUtils.toPosixPath = void 0;
-	const path = __importStar(require$$0$3);
+	const path = __importStar(require$$0$4);
 	/**
 	 * toPosixPath converts the given path to the posix form. On Windows, \\ will be
 	 * replaced with /.
@@ -2350,7 +2278,7 @@ function requireCore () {
 		const file_command_1 = fileCommand;
 		const utils_1 = utils$4;
 		const os = __importStar(require$$0$1);
-		const path = __importStar(require$$0$3);
+		const path = __importStar(require$$0$4);
 		const oidc_utils_1 = requireOidcUtils();
 		/**
 		 * The code to exit an action
@@ -3785,11 +3713,7 @@ CombinedStream$1.prototype._emitError = function(err) {
 
 var mimeTypes = {};
 
-var mimeDbExports = {};
-var mimeDb = {
-  get exports(){ return mimeDbExports; },
-  set exports(v){ mimeDbExports = v; },
-};
+var mimeDb = {exports: {}};
 
 var require$$0 = {
 	"application/1d-interleaved-parityfec": {
@@ -14523,8 +14447,8 @@ var require$$0 = {
 	 * @private
 	 */
 
-	var db = mimeDbExports;
-	var extname = require$$0$3.extname;
+	var db = mimeDb.exports;
+	var extname = require$$0$4.extname;
 
 	/**
 	 * Module variables.
@@ -14979,11 +14903,7 @@ function parallel(list, iterator, callback)
   return terminator$1.bind(state, callback);
 }
 
-var serialOrderedExports = {};
-var serialOrdered$2 = {
-  get exports(){ return serialOrderedExports; },
-  set exports(v){ serialOrderedExports = v; },
-};
+var serialOrdered$2 = {exports: {}};
 
 var iterate    = iterate_1
   , initState  = state_1
@@ -14993,8 +14913,8 @@ var iterate    = iterate_1
 // Public API
 serialOrdered$2.exports = serialOrdered$1;
 // sorting helpers
-serialOrderedExports.ascending  = ascending;
-serialOrderedExports.descending = descending;
+serialOrdered$2.exports.ascending  = ascending;
+serialOrdered$2.exports.descending = descending;
 
 /**
  * Runs iterator over provided sorted array elements in series
@@ -15061,7 +14981,7 @@ function descending(a, b)
   return -1 * ascending(a, b);
 }
 
-var serialOrdered = serialOrderedExports;
+var serialOrdered = serialOrdered$2.exports;
 
 // Public API
 var serial_1 = serial;
@@ -15083,7 +15003,7 @@ var asynckit$1 =
 {
   parallel      : parallel_1,
   serial        : serial_1,
-  serialOrdered : serialOrderedExports
+  serialOrdered : serialOrdered$2.exports
 };
 
 // populates missing values
@@ -15099,11 +15019,11 @@ var populate$1 = function(dst, src) {
 
 var CombinedStream = combined_stream;
 var util = require$$1;
-var path = require$$0$3;
-var http$1 = require$$2$1;
+var path = require$$0$4;
+var http$1 = require$$2;
 var https$1 = require$$3;
-var parseUrl$1 = require$$0$4.parse;
-var fs = require$$0$2;
+var parseUrl$1 = require$$0$5.parse;
+var fs = require$$0$3;
 var Stream = stream.Stream;
 var mime = mimeTypes;
 var asynckit = asynckit$1;
@@ -15599,8 +15519,6 @@ FormData$1.prototype.toString = function () {
   return '[object FormData]';
 };
 
-var FormData$2 = form_data;
-
 /**
  * Determines if the given thing is a array or js object.
  *
@@ -15685,7 +15603,7 @@ function toFormData(obj, formData, options) {
   }
 
   // eslint-disable-next-line no-param-reassign
-  formData = formData || new (FormData$2 || FormData)();
+  formData = formData || new (form_data || FormData)();
 
   // eslint-disable-next-line no-param-reassign
   options = utils$3.toFlatObject(options, {
@@ -15990,21 +15908,19 @@ class InterceptorManager {
   }
 }
 
-var InterceptorManager$1 = InterceptorManager;
-
 var transitionalDefaults = {
   silentJSONParsing: true,
   forcedJSONParsing: true,
   clarifyTimeoutError: false
 };
 
-var URLSearchParams = require$$0$4.URLSearchParams;
+var URLSearchParams = require$$0$5.URLSearchParams;
 
 var platform = {
   isNode: true,
   classes: {
     URLSearchParams,
-    FormData: FormData$2,
+    FormData: form_data,
     Blob: typeof Blob !== 'undefined' && Blob || null
   },
   protocols: [ 'http', 'https', 'file', 'data' ]
@@ -16264,8 +16180,6 @@ utils$3.forEach(['delete', 'get', 'head'], function forEachMethodNoData(method) 
 utils$3.forEach(['post', 'put', 'patch'], function forEachMethodWithData(method) {
   defaults$2.headers[method] = utils$3.merge(DEFAULT_CONTENT_TYPE);
 });
-
-var defaults$3 = defaults$2;
 
 // RawAxiosHeaders whose duplicates are ignored by node
 // c.f. https://nodejs.org/api/http.html#http_message_headers
@@ -16599,8 +16513,6 @@ AxiosHeaders.accessor(['Content-Type', 'Content-Length', 'Accept', 'Accept-Encod
 utils$3.freezeMethods(AxiosHeaders.prototype);
 utils$3.freezeMethods(AxiosHeaders);
 
-var AxiosHeaders$1 = AxiosHeaders;
-
 /**
  * Transform the data for a request or a response
  *
@@ -16610,9 +16522,9 @@ var AxiosHeaders$1 = AxiosHeaders;
  * @returns {*} The resulting transformed data
  */
 function transformData(fns, response) {
-  const config = this || defaults$3;
+  const config = this || defaults$2;
   const context = response || config;
-  const headers = AxiosHeaders$1.from(context.headers);
+  const headers = AxiosHeaders.from(context.headers);
   let data = context.data;
 
   utils$3.forEach(fns, function transform(fn) {
@@ -16716,7 +16628,7 @@ function buildFullPath(baseURL, requestedURL) {
   return requestedURL;
 }
 
-var parseUrl = require$$0$4.parse;
+var parseUrl = require$$0$5.parse;
 
 var DEFAULT_PORTS = {
   ftp: 21,
@@ -16823,11 +16735,7 @@ function getEnv(key) {
 
 var getProxyForUrl_1 = getProxyForUrl;
 
-var followRedirectsExports = {};
-var followRedirects = {
-  get exports(){ return followRedirectsExports; },
-  set exports(v){ followRedirectsExports = v; },
-};
+var followRedirects = {exports: {}};
 
 var debug$1;
 
@@ -16845,9 +16753,9 @@ var debug_1 = function () {
   debug$1.apply(null, arguments);
 };
 
-var url = require$$0$4;
+var url = require$$0$5;
 var URL$1 = url.URL;
-var http = require$$2$1;
+var http = require$$2;
 var https = require$$3;
 var Writable = stream.Writable;
 var assert = require$$5;
@@ -17465,7 +17373,7 @@ function isBuffer$1(value) {
 
 // Exports
 followRedirects.exports = wrap({ http: http, https: https });
-followRedirectsExports.wrap = wrap;
+followRedirects.exports.wrap = wrap;
 
 const VERSION = "1.3.2";
 
@@ -17787,8 +17695,6 @@ class AxiosTransformStream extends stream.Transform{
   }
 }
 
-var AxiosTransformStream$1 = AxiosTransformStream;
-
 const {asyncIterator} = Symbol;
 
 const readBlob = async function* (blob) {
@@ -17802,8 +17708,6 @@ const readBlob = async function* (blob) {
     yield blob;
   }
 };
-
-var readBlob$1 = readBlob;
 
 const BOUNDARY_ALPHABET = utils$3.ALPHABET.ALPHA_DIGIT + '-_';
 
@@ -17846,7 +17750,7 @@ class FormDataPart {
     if(utils$3.isTypedArray(value)) {
       yield value;
     } else {
-      yield* readBlob$1(value);
+      yield* readBlob(value);
     }
 
     yield CRLF_BYTES;
@@ -17910,8 +17814,6 @@ const formDataToStream = (form, headersHandler, options) => {
   })());
 };
 
-var formDataToStream$1 = formDataToStream;
-
 class ZlibHeaderTransformStream extends stream.Transform {
   __transform(chunk, encoding, callback) {
     this.push(chunk);
@@ -17935,8 +17837,6 @@ class ZlibHeaderTransformStream extends stream.Transform {
   }
 }
 
-var ZlibHeaderTransformStream$1 = ZlibHeaderTransformStream;
-
 const zlibOptions = {
   flush: zlib.constants.Z_SYNC_FLUSH,
   finishFlush: zlib.constants.Z_SYNC_FLUSH
@@ -17949,7 +17849,7 @@ const brotliOptions = {
 
 const isBrotliSupported = utils$3.isFunction(zlib.createBrotliDecompress);
 
-const {http: httpFollow, https: httpsFollow} = followRedirectsExports;
+const {http: httpFollow, https: httpsFollow} = followRedirects.exports;
 
 const isHttps = /https:?/;
 
@@ -18133,7 +18033,7 @@ var httpAdapter = isHttpAdapterSupported && function httpAdapter(config) {
         data: convertedData,
         status: 200,
         statusText: 'OK',
-        headers: new AxiosHeaders$1(),
+        headers: new AxiosHeaders(),
         config
       });
     }
@@ -18146,7 +18046,7 @@ var httpAdapter = isHttpAdapterSupported && function httpAdapter(config) {
       ));
     }
 
-    const headers = AxiosHeaders$1.from(config.headers).normalize();
+    const headers = AxiosHeaders.from(config.headers).normalize();
 
     // Set User-Agent (required by some servers)
     // See https://github.com/axios/axios/issues/69
@@ -18164,7 +18064,7 @@ var httpAdapter = isHttpAdapterSupported && function httpAdapter(config) {
     if (utils$3.isSpecCompliantForm(data)) {
       const userBoundary = headers.getContentType(/boundary=([-_\w\d]{10,70})/i);
 
-      data = formDataToStream$1(data, (formHeaders) => {
+      data = formDataToStream(data, (formHeaders) => {
         headers.set(formHeaders);
       }, {
         tag: `axios-${VERSION}-boundary`,
@@ -18185,7 +18085,7 @@ var httpAdapter = isHttpAdapterSupported && function httpAdapter(config) {
     } else if (utils$3.isBlob(data)) {
       data.size && headers.setContentType(data.type || 'application/octet-stream');
       headers.setContentLength(data.size || 0);
-      data = stream.Readable.from(readBlob$1(data));
+      data = stream.Readable.from(readBlob(data));
     } else if (data && !utils$3.isStream(data)) {
       if (Buffer.isBuffer(data)) ; else if (utils$3.isArrayBuffer(data)) {
         data = Buffer.from(new Uint8Array(data));
@@ -18225,7 +18125,7 @@ var httpAdapter = isHttpAdapterSupported && function httpAdapter(config) {
         data = stream.Readable.from(data, {objectMode: false});
       }
 
-      data = stream.pipeline([data, new AxiosTransformStream$1({
+      data = stream.pipeline([data, new AxiosTransformStream({
         length: contentLength,
         maxRate: utils$3.toFiniteNumber(maxUploadRate)
       })], utils$3.noop);
@@ -18299,7 +18199,7 @@ var httpAdapter = isHttpAdapterSupported && function httpAdapter(config) {
     if (config.transport) {
       transport = config.transport;
     } else if (config.maxRedirects === 0) {
-      transport = isHttpsRequest ? require$$3 : require$$2$1;
+      transport = isHttpsRequest ? require$$3 : require$$2;
     } else {
       if (config.maxRedirects) {
         options.maxRedirects = config.maxRedirects;
@@ -18330,7 +18230,7 @@ var httpAdapter = isHttpAdapterSupported && function httpAdapter(config) {
       const responseLength = +res.headers['content-length'];
 
       if (onDownloadProgress) {
-        const transformStream = new AxiosTransformStream$1({
+        const transformStream = new AxiosTransformStream({
           length: utils$3.toFiniteNumber(responseLength),
           maxRate: utils$3.toFiniteNumber(maxDownloadRate)
         });
@@ -18371,7 +18271,7 @@ var httpAdapter = isHttpAdapterSupported && function httpAdapter(config) {
           delete res.headers['content-encoding'];
           break;
         case 'deflate':
-          streams.push(new ZlibHeaderTransformStream$1());
+          streams.push(new ZlibHeaderTransformStream());
 
           // add the unzipper to the body stream processing pipeline
           streams.push(zlib.createUnzip(zlibOptions));
@@ -18397,7 +18297,7 @@ var httpAdapter = isHttpAdapterSupported && function httpAdapter(config) {
       const response = {
         status: res.statusCode,
         statusText: res.statusMessage,
-        headers: new AxiosHeaders$1(res.headers),
+        headers: new AxiosHeaders(res.headers),
         config,
         request: lastRequest
       };
@@ -18697,7 +18597,7 @@ const isXHRAdapterSupported = typeof XMLHttpRequest !== 'undefined';
 var xhrAdapter = isXHRAdapterSupported && function (config) {
   return new Promise(function dispatchXhrRequest(resolve, reject) {
     let requestData = config.data;
-    const requestHeaders = AxiosHeaders$1.from(config.headers).normalize();
+    const requestHeaders = AxiosHeaders.from(config.headers).normalize();
     const responseType = config.responseType;
     let onCanceled;
     function done() {
@@ -18735,7 +18635,7 @@ var xhrAdapter = isXHRAdapterSupported && function (config) {
         return;
       }
       // Prepare the response
-      const responseHeaders = AxiosHeaders$1.from(
+      const responseHeaders = AxiosHeaders.from(
         'getAllResponseHeaders' in request && request.getAllResponseHeaders()
       );
       const responseData = !responseType || responseType === 'text' || responseType === 'json' ?
@@ -18979,7 +18879,7 @@ function throwIfCancellationRequested(config) {
 function dispatchRequest(config) {
   throwIfCancellationRequested(config);
 
-  config.headers = AxiosHeaders$1.from(config.headers);
+  config.headers = AxiosHeaders.from(config.headers);
 
   // Transform request data
   config.data = transformData.call(
@@ -18991,7 +18891,7 @@ function dispatchRequest(config) {
     config.headers.setContentType('application/x-www-form-urlencoded', false);
   }
 
-  const adapter = adapters.getAdapter(config.adapter || defaults$3.adapter);
+  const adapter = adapters.getAdapter(config.adapter || defaults$2.adapter);
 
   return adapter(config).then(function onAdapterResolution(response) {
     throwIfCancellationRequested(config);
@@ -19003,7 +18903,7 @@ function dispatchRequest(config) {
       response
     );
 
-    response.headers = AxiosHeaders$1.from(response.headers);
+    response.headers = AxiosHeaders.from(response.headers);
 
     return response;
   }, function onAdapterRejection(reason) {
@@ -19017,7 +18917,7 @@ function dispatchRequest(config) {
           config.transformResponse,
           reason.response
         );
-        reason.response.headers = AxiosHeaders$1.from(reason.response.headers);
+        reason.response.headers = AxiosHeaders.from(reason.response.headers);
       }
     }
 
@@ -19025,7 +18925,7 @@ function dispatchRequest(config) {
   });
 }
 
-const headersToObject = (thing) => thing instanceof AxiosHeaders$1 ? thing.toJSON() : thing;
+const headersToObject = (thing) => thing instanceof AxiosHeaders ? thing.toJSON() : thing;
 
 /**
  * Config-specific merge-function which creates a new config-object
@@ -19226,8 +19126,8 @@ class Axios {
   constructor(instanceConfig) {
     this.defaults = instanceConfig;
     this.interceptors = {
-      request: new InterceptorManager$1(),
-      response: new InterceptorManager$1()
+      request: new InterceptorManager(),
+      response: new InterceptorManager()
     };
   }
 
@@ -19286,7 +19186,7 @@ class Axios {
       }
     );
 
-    config.headers = AxiosHeaders$1.concat(contextHeaders, headers);
+    config.headers = AxiosHeaders.concat(contextHeaders, headers);
 
     // filter out skipped interceptors
     const requestInterceptorChain = [];
@@ -19397,8 +19297,6 @@ utils$3.forEach(['post', 'put', 'patch'], function forEachMethodWithData(method)
 
   Axios.prototype[method + 'Form'] = generateHTTPMethod(true);
 });
-
-var Axios$1 = Axios;
 
 /**
  * A `CancelToken` is an object that can be used to request cancellation of an operation.
@@ -19516,8 +19414,6 @@ class CancelToken {
   }
 }
 
-var CancelToken$1 = CancelToken;
-
 /**
  * Syntactic sugar for invoking a function and expanding an array for arguments.
  *
@@ -19626,8 +19522,6 @@ Object.entries(HttpStatusCode).forEach(([key, value]) => {
   HttpStatusCode[value] = key;
 });
 
-var HttpStatusCode$1 = HttpStatusCode;
-
 /**
  * Create an instance of Axios
  *
@@ -19636,11 +19530,11 @@ var HttpStatusCode$1 = HttpStatusCode;
  * @returns {Axios} A new instance of Axios
  */
 function createInstance(defaultConfig) {
-  const context = new Axios$1(defaultConfig);
-  const instance = bind$2(Axios$1.prototype.request, context);
+  const context = new Axios(defaultConfig);
+  const instance = bind$2(Axios.prototype.request, context);
 
   // Copy axios.prototype to instance
-  utils$3.extend(instance, Axios$1.prototype, context, {allOwnKeys: true});
+  utils$3.extend(instance, Axios.prototype, context, {allOwnKeys: true});
 
   // Copy context to instance
   utils$3.extend(instance, context, null, {allOwnKeys: true});
@@ -19654,14 +19548,14 @@ function createInstance(defaultConfig) {
 }
 
 // Create the default instance to be exported
-const axios = createInstance(defaults$3);
+const axios = createInstance(defaults$2);
 
 // Expose Axios class to allow class inheritance
-axios.Axios = Axios$1;
+axios.Axios = Axios;
 
 // Expose Cancel & CancelToken
 axios.CanceledError = CanceledError;
-axios.CancelToken = CancelToken$1;
+axios.CancelToken = CancelToken;
 axios.isCancel = isCancel;
 axios.VERSION = VERSION;
 axios.toFormData = toFormData;
@@ -19685,11 +19579,11 @@ axios.isAxiosError = isAxiosError;
 // Expose mergeConfig
 axios.mergeConfig = mergeConfig;
 
-axios.AxiosHeaders = AxiosHeaders$1;
+axios.AxiosHeaders = AxiosHeaders;
 
 axios.formToJSON = thing => formDataToJSON(utils$3.isHTMLForm(thing) ? new FormData(thing) : thing);
 
-axios.HttpStatusCode = HttpStatusCode$1;
+axios.HttpStatusCode = HttpStatusCode;
 
 axios.default = axios;
 
@@ -20141,11 +20035,7 @@ var getIntrinsic = function GetIntrinsic(name, allowMissing) {
 	return value;
 };
 
-var callBindExports = {};
-var callBind$1 = {
-  get exports(){ return callBindExports; },
-  set exports(v){ callBindExports = v; },
-};
+var callBind$1 = {exports: {}};
 
 (function (module) {
 
@@ -20198,7 +20088,7 @@ var callBind$1 = {
 
 var GetIntrinsic$1 = getIntrinsic;
 
-var callBind = callBindExports;
+var callBind = callBind$1.exports;
 
 var $indexOf = callBind(GetIntrinsic$1('String.prototype.indexOf'));
 

@@ -1,6 +1,6 @@
 {
   "name": "action-notify",
-  "version": "0.0.6",
+  "version": "0.2.1",
   "description": "Use https://github.com/ZNotify/Notify to send notification.",
   "main": "dist/index.js",
   "type": "module",

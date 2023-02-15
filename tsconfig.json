@@ -5,8 +5,9 @@
         "lib": [
             "es2019"
         ],
-        "declaration": true,
-        "declarationMap": true,
+        "sourceMap": false,
+        "declaration": false,
+        "declarationMap": false,
         "importHelpers": false,
         "downlevelIteration": false,
         "strict": true,
