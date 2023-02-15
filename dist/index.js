@@ -21810,7 +21810,7 @@ class Client {
   }
 }
 
-const userID = coreExports.getInput('user_id');
+const userSecret = coreExports.getInput('user_secret');
 const content = coreExports.getInput('content');
 const title = coreExports.getInput('title');
 const long = coreExports.getInput('long');
@@ -21821,7 +21821,15 @@ if (!possiblePriorities.includes(priority)) {
     coreExports.setFailed(`Priority must be one of ${possiblePriorities.join(', ')}`);
     process.exit(1);
 }
-Client.create(userID, apiEndpoint)
+if (!userSecret) {
+    coreExports.setFailed('User secret is required');
+    process.exit(1);
+}
+if (!content) {
+    coreExports.setFailed('Content is required');
+    process.exit(1);
+}
+Client.create(userSecret, apiEndpoint)
     .then(client => client.send({
     title: title,
     content: content,

@@ -2,8 +2,8 @@ name: "Send Notification"
 author: "Zxilly"
 description: "Send Notification with MiPush and FCM"
 inputs:
-  user_id:
-    description: "The user will be notified."
+  user_secret:
+    description: "The secret of the user will be notified."
     required: true
   content:
     description: "Notification content."
@@ -19,7 +19,7 @@ inputs:
     required: false
     default: "normal"
   api_endpoint:
-    description: "Push handler server."
+    description: "Address of znotify push server."
     required: false
     default: "https://push.learningman.top"
 

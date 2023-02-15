@@ -1,9 +1,9 @@
 import * as core from '@actions/core';
 
-import {Client} from 'znotify';
+import { Client } from 'znotify';
 
 
-const userID = core.getInput('user_id');
+const userSecret = core.getInput('user_secret');
 const content = core.getInput('content');
 const title = core.getInput('title');
 const long = core.getInput('long');
@@ -17,7 +17,17 @@ if (!possiblePriorities.includes(priority)) {
     process.exit(1);
 }
 
-Client.create(userID, apiEndpoint)
+if (!userSecret) {
+    core.setFailed('User secret is required');
+    process.exit(1);
+}
+
+if (!content) {
+    core.setFailed('Content is required');
+    process.exit(1);
+}
+
+Client.create(userSecret, apiEndpoint)
     .then(client => client.send({
         title: title,
         content: content,
