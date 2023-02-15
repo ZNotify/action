@@ -29,7 +29,7 @@ jobs:
       - name: Test action
         uses: ./
         with:
-          user_id: test
+          user_secret: test
           content: test Action
           api_endpoint: http://127.0.0.1:14444
 
