@@ -4,7 +4,6 @@ import commonjs from '@rollup/plugin-commonjs';
 import json from '@rollup/plugin-json';
 
 const input = 'src/index.ts';
-const production = process.env.NODE_ENV === 'production';
 
 export default {
   input,
