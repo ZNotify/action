@@ -47,12 +47,12 @@ var core = {};
 
 var command = {};
 
-var utils$4 = {};
+var utils$5 = {};
 
 // We use any as a valid input type
 /* eslint-disable @typescript-eslint/no-explicit-any */
-Object.defineProperty(utils$4, "__esModule", { value: true });
-utils$4.toCommandProperties = utils$4.toCommandValue = void 0;
+Object.defineProperty(utils$5, "__esModule", { value: true });
+utils$5.toCommandProperties = utils$5.toCommandValue = void 0;
 /**
  * Sanitizes an input into a string so it can be passed into issueCommand safely
  * @param input input to sanitize into a string
@@ -66,7 +66,7 @@ function toCommandValue(input) {
     }
     return JSON.stringify(input);
 }
-utils$4.toCommandValue = toCommandValue;
+utils$5.toCommandValue = toCommandValue;
 /**
  *
  * @param annotationProperties
@@ -86,7 +86,7 @@ function toCommandProperties(annotationProperties) {
         endColumn: annotationProperties.endColumn
     };
 }
-utils$4.toCommandProperties = toCommandProperties;
+utils$5.toCommandProperties = toCommandProperties;
 
 var __createBinding$1 = (commonjsGlobal && commonjsGlobal.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
@@ -110,7 +110,7 @@ var __importStar$1 = (commonjsGlobal && commonjsGlobal.__importStar) || function
 Object.defineProperty(command, "__esModule", { value: true });
 command.issue = command.issueCommand = void 0;
 const os$1 = __importStar$1(require$$0$1);
-const utils_1$1 = utils$4;
+const utils_1$1 = utils$5;
 /**
  * Commands
  *
@@ -808,7 +808,7 @@ fileCommand.prepareKeyValueMessage = fileCommand.issueFileCommand = void 0;
 const fs$1 = __importStar(require$$0$2);
 const os = __importStar(require$$0$1);
 const uuid_1 = require$$2;
-const utils_1 = utils$4;
+const utils_1 = utils$5;
 function issueFileCommand(command, message) {
     const filePath = process.env[`GITHUB_${command}`];
     if (!filePath) {
@@ -2341,7 +2341,7 @@ function requireCore () {
 		exports.getIDToken = exports.getState = exports.saveState = exports.group = exports.endGroup = exports.startGroup = exports.info = exports.notice = exports.warning = exports.error = exports.debug = exports.isDebug = exports.setFailed = exports.setCommandEcho = exports.setOutput = exports.getBooleanInput = exports.getMultilineInput = exports.getInput = exports.addPath = exports.setSecret = exports.exportVariable = exports.ExitCode = void 0;
 		const command_1 = command;
 		const file_command_1 = fileCommand;
-		const utils_1 = utils$4;
+		const utils_1 = utils$5;
 		const os = __importStar(require$$0$1);
 		const path = __importStar(require$$0$3);
 		const oidc_utils_1 = requireOidcUtils();
@@ -2842,12 +2842,16 @@ const isStream = (val) => isObject(val) && isFunction$1(val.pipe);
  * @returns {boolean} True if value is an FormData, otherwise false
  */
 const isFormData = (thing) => {
-  const pattern = '[object FormData]';
+  let kind;
   return thing && (
-    (typeof FormData === 'function' && thing instanceof FormData) ||
-    toString.call(thing) === pattern ||
-    (isFunction$1(thing.toString) && thing.toString() === pattern)
-  );
+    (typeof FormData === 'function' && thing instanceof FormData) || (
+      isFunction$1(thing.append) && (
+        (kind = kindOf(thing)) === 'formdata' ||
+        // detect form-data instance
+        (kind === 'object' && isFunction$1(thing.toString) && thing.toString() === '[object FormData]')
+      )
+    )
+  )
 };
 
 /**
@@ -3190,8 +3194,9 @@ const reduceDescriptors = (obj, reducer) => {
   const reducedDescriptors = {};
 
   forEach(descriptors, (descriptor, name) => {
-    if (reducer(descriptor, name, obj) !== false) {
-      reducedDescriptors[name] = descriptor;
+    let ret;
+    if ((ret = reducer(descriptor, name, obj)) !== false) {
+      reducedDescriptors[name] = ret || descriptor;
     }
   });
 
@@ -3312,7 +3317,12 @@ const toJSONObject = (obj) => {
   return visit(obj, 0);
 };
 
-var utils$3 = {
+const isAsyncFn = kindOfTest('AsyncFunction');
+
+const isThenable = (thing) =>
+  thing && (isObject(thing) || isFunction$1(thing)) && isFunction$1(thing.then) && isFunction$1(thing.catch);
+
+var utils$4 = {
   isArray: isArray$4,
   isArrayBuffer,
   isBuffer: isBuffer$2,
@@ -3361,7 +3371,9 @@ var utils$3 = {
   ALPHABET,
   generateString,
   isSpecCompliantForm,
-  toJSONObject
+  toJSONObject,
+  isAsyncFn,
+  isThenable
 };
 
 /**
@@ -3392,7 +3404,7 @@ function AxiosError(message, code, config, request, response) {
   response && (this.response = response);
 }
 
-utils$3.inherits(AxiosError, Error, {
+utils$4.inherits(AxiosError, Error, {
   toJSON: function toJSON() {
     return {
       // Standard
@@ -3407,7 +3419,7 @@ utils$3.inherits(AxiosError, Error, {
       columnNumber: this.columnNumber,
       stack: this.stack,
       // Axios
-      config: utils$3.toJSONObject(this.config),
+      config: utils$4.toJSONObject(this.config),
       code: this.code,
       status: this.response && this.response.status ? this.response.status : null
     };
@@ -3442,7 +3454,7 @@ Object.defineProperty(prototype$1, 'isAxiosError', {value: true});
 AxiosError.from = (error, code, config, request, response, customProps) => {
   const axiosError = Object.create(prototype$1);
 
-  utils$3.toFlatObject(error, axiosError, function filter(obj) {
+  utils$4.toFlatObject(error, axiosError, function filter(obj) {
     return obj !== Error.prototype;
   }, prop => {
     return prop !== 'isAxiosError';
@@ -15592,7 +15604,7 @@ var FormData$2 = /*@__PURE__*/getDefaultExportFromCjs(form_data);
  * @returns {boolean}
  */
 function isVisitable(thing) {
-  return utils$3.isPlainObject(thing) || utils$3.isArray(thing);
+  return utils$4.isPlainObject(thing) || utils$4.isArray(thing);
 }
 
 /**
@@ -15603,7 +15615,7 @@ function isVisitable(thing) {
  * @returns {string} the key without the brackets.
  */
 function removeBrackets(key) {
-  return utils$3.endsWith(key, '[]') ? key.slice(0, -2) : key;
+  return utils$4.endsWith(key, '[]') ? key.slice(0, -2) : key;
 }
 
 /**
@@ -15632,10 +15644,10 @@ function renderKey(path, key, dots) {
  * @returns {boolean}
  */
 function isFlatArray(arr) {
-  return utils$3.isArray(arr) && !arr.some(isVisitable);
+  return utils$4.isArray(arr) && !arr.some(isVisitable);
 }
 
-const predicates = utils$3.toFlatObject(utils$3, {}, null, function filter(prop) {
+const predicates = utils$4.toFlatObject(utils$4, {}, null, function filter(prop) {
   return /^is[A-Z]/.test(prop);
 });
 
@@ -15663,7 +15675,7 @@ const predicates = utils$3.toFlatObject(utils$3, {}, null, function filter(prop)
  * @returns
  */
 function toFormData(obj, formData, options) {
-  if (!utils$3.isObject(obj)) {
+  if (!utils$4.isObject(obj)) {
     throw new TypeError('target must be an object');
   }
 
@@ -15671,13 +15683,13 @@ function toFormData(obj, formData, options) {
   formData = formData || new (FormData$2 || FormData)();
 
   // eslint-disable-next-line no-param-reassign
-  options = utils$3.toFlatObject(options, {
+  options = utils$4.toFlatObject(options, {
     metaTokens: true,
     dots: false,
     indexes: false
   }, false, function defined(option, source) {
     // eslint-disable-next-line no-eq-null,eqeqeq
-    return !utils$3.isUndefined(source[option]);
+    return !utils$4.isUndefined(source[option]);
   });
 
   const metaTokens = options.metaTokens;
@@ -15686,24 +15698,24 @@ function toFormData(obj, formData, options) {
   const dots = options.dots;
   const indexes = options.indexes;
   const _Blob = options.Blob || typeof Blob !== 'undefined' && Blob;
-  const useBlob = _Blob && utils$3.isSpecCompliantForm(formData);
+  const useBlob = _Blob && utils$4.isSpecCompliantForm(formData);
 
-  if (!utils$3.isFunction(visitor)) {
+  if (!utils$4.isFunction(visitor)) {
     throw new TypeError('visitor must be a function');
   }
 
   function convertValue(value) {
     if (value === null) return '';
 
-    if (utils$3.isDate(value)) {
+    if (utils$4.isDate(value)) {
       return value.toISOString();
     }
 
-    if (!useBlob && utils$3.isBlob(value)) {
+    if (!useBlob && utils$4.isBlob(value)) {
       throw new AxiosError('Blob is not supported. Use a Buffer instead.');
     }
 
-    if (utils$3.isArrayBuffer(value) || utils$3.isTypedArray(value)) {
+    if (utils$4.isArrayBuffer(value) || utils$4.isTypedArray(value)) {
       return useBlob && typeof Blob === 'function' ? new Blob([value]) : Buffer.from(value);
     }
 
@@ -15724,20 +15736,20 @@ function toFormData(obj, formData, options) {
     let arr = value;
 
     if (value && !path && typeof value === 'object') {
-      if (utils$3.endsWith(key, '{}')) {
+      if (utils$4.endsWith(key, '{}')) {
         // eslint-disable-next-line no-param-reassign
         key = metaTokens ? key : key.slice(0, -2);
         // eslint-disable-next-line no-param-reassign
         value = JSON.stringify(value);
       } else if (
-        (utils$3.isArray(value) && isFlatArray(value)) ||
-        ((utils$3.isFileList(value) || utils$3.endsWith(key, '[]')) && (arr = utils$3.toArray(value))
+        (utils$4.isArray(value) && isFlatArray(value)) ||
+        ((utils$4.isFileList(value) || utils$4.endsWith(key, '[]')) && (arr = utils$4.toArray(value))
         )) {
         // eslint-disable-next-line no-param-reassign
         key = removeBrackets(key);
 
         arr.forEach(function each(el, index) {
-          !(utils$3.isUndefined(el) || el === null) && formData.append(
+          !(utils$4.isUndefined(el) || el === null) && formData.append(
             // eslint-disable-next-line no-nested-ternary
             indexes === true ? renderKey([key], index, dots) : (indexes === null ? key : key + '[]'),
             convertValue(el)
@@ -15765,7 +15777,7 @@ function toFormData(obj, formData, options) {
   });
 
   function build(value, path) {
-    if (utils$3.isUndefined(value)) return;
+    if (utils$4.isUndefined(value)) return;
 
     if (stack.indexOf(value) !== -1) {
       throw Error('Circular reference detected in ' + path.join('.'));
@@ -15773,9 +15785,9 @@ function toFormData(obj, formData, options) {
 
     stack.push(value);
 
-    utils$3.forEach(value, function each(el, key) {
-      const result = !(utils$3.isUndefined(el) || el === null) && visitor.call(
-        formData, el, utils$3.isString(key) ? key.trim() : key, path, exposedHelpers
+    utils$4.forEach(value, function each(el, key) {
+      const result = !(utils$4.isUndefined(el) || el === null) && visitor.call(
+        formData, el, utils$4.isString(key) ? key.trim() : key, path, exposedHelpers
       );
 
       if (result === true) {
@@ -15786,7 +15798,7 @@ function toFormData(obj, formData, options) {
     stack.pop();
   }
 
-  if (!utils$3.isObject(obj)) {
+  if (!utils$4.isObject(obj)) {
     throw new TypeError('data must be an object');
   }
 
@@ -15890,7 +15902,7 @@ function buildURL(url, params, options) {
   if (serializeFn) {
     serializedParams = serializeFn(params, options);
   } else {
-    serializedParams = utils$3.isURLSearchParams(params) ?
+    serializedParams = utils$4.isURLSearchParams(params) ?
       params.toString() :
       new AxiosURLSearchParams(params, options).toString(_encode);
   }
@@ -15965,7 +15977,7 @@ class InterceptorManager {
    * @returns {void}
    */
   forEach(fn) {
-    utils$3.forEach(this.handlers, function forEachHandler(h) {
+    utils$4.forEach(this.handlers, function forEachHandler(h) {
       if (h !== null) {
         fn(h);
       }
@@ -15983,7 +15995,7 @@ var transitionalDefaults = {
 
 var URLSearchParams = require$$0$4.URLSearchParams;
 
-var platform = {
+var platform$1 = {
   isNode: true,
   classes: {
     URLSearchParams,
@@ -15993,10 +16005,64 @@ var platform = {
   protocols: [ 'http', 'https', 'file', 'data' ]
 };
 
+const hasBrowserEnv = typeof window !== 'undefined' && typeof document !== 'undefined';
+
+/**
+ * Determine if we're running in a standard browser environment
+ *
+ * This allows axios to run in a web worker, and react-native.
+ * Both environments support XMLHttpRequest, but not fully standard globals.
+ *
+ * web workers:
+ *  typeof window -> undefined
+ *  typeof document -> undefined
+ *
+ * react-native:
+ *  navigator.product -> 'ReactNative'
+ * nativescript
+ *  navigator.product -> 'NativeScript' or 'NS'
+ *
+ * @returns {boolean}
+ */
+const hasStandardBrowserEnv = (
+  (product) => {
+    return hasBrowserEnv && ['ReactNative', 'NativeScript', 'NS'].indexOf(product) < 0
+  })(typeof navigator !== 'undefined' && navigator.product);
+
+/**
+ * Determine if we're running in a standard browser webWorker environment
+ *
+ * Although the `isStandardBrowserEnv` method indicates that
+ * `allows axios to run in a web worker`, the WebWorker will still be
+ * filtered out due to its judgment standard
+ * `typeof window !== 'undefined' && typeof document !== 'undefined'`.
+ * This leads to a problem when axios post `FormData` in webWorker
+ */
+const hasStandardBrowserWebWorkerEnv = (() => {
+  return (
+    typeof WorkerGlobalScope !== 'undefined' &&
+    // eslint-disable-next-line no-undef
+    self instanceof WorkerGlobalScope &&
+    typeof self.importScripts === 'function'
+  );
+})();
+
+var utils$3 = /*#__PURE__*/Object.freeze({
+	__proto__: null,
+	hasBrowserEnv: hasBrowserEnv,
+	hasStandardBrowserEnv: hasStandardBrowserEnv,
+	hasStandardBrowserWebWorkerEnv: hasStandardBrowserWebWorkerEnv
+});
+
+var platform = {
+  ...utils$3,
+  ...platform$1
+};
+
 function toURLEncodedForm(data, options) {
   return toFormData(data, new platform.classes.URLSearchParams(), Object.assign({
     visitor: function(value, key, path, helpers) {
-      if (utils$3.isBuffer(value)) {
+      if (platform.isNode && utils$4.isBuffer(value)) {
         this.append(key, value.toString('base64'));
         return false;
       }
@@ -16018,7 +16084,7 @@ function parsePropPath(name) {
   // foo.x.y.z
   // foo-x-y-z
   // foo x y z
-  return utils$3.matchAll(/\w+|\[(\w*)]/g, name).map(match => {
+  return utils$4.matchAll(/\w+|\[(\w*)]/g, name).map(match => {
     return match[0] === '[]' ? '' : match[1] || match[0];
   });
 }
@@ -16055,10 +16121,10 @@ function formDataToJSON(formData) {
     let name = path[index++];
     const isNumericKey = Number.isFinite(+name);
     const isLast = index >= path.length;
-    name = !name && utils$3.isArray(target) ? target.length : name;
+    name = !name && utils$4.isArray(target) ? target.length : name;
 
     if (isLast) {
-      if (utils$3.hasOwnProp(target, name)) {
+      if (utils$4.hasOwnProp(target, name)) {
         target[name] = [target[name], value];
       } else {
         target[name] = value;
@@ -16067,23 +16133,23 @@ function formDataToJSON(formData) {
       return !isNumericKey;
     }
 
-    if (!target[name] || !utils$3.isObject(target[name])) {
+    if (!target[name] || !utils$4.isObject(target[name])) {
       target[name] = [];
     }
 
     const result = buildPath(path, value, target[name], index);
 
-    if (result && utils$3.isArray(target[name])) {
+    if (result && utils$4.isArray(target[name])) {
       target[name] = arrayToObject$1(target[name]);
     }
 
     return !isNumericKey;
   }
 
-  if (utils$3.isFormData(formData) && utils$3.isFunction(formData.entries)) {
+  if (utils$4.isFormData(formData) && utils$4.isFunction(formData.entries)) {
     const obj = {};
 
-    utils$3.forEachEntry(formData, (name, value) => {
+    utils$4.forEachEntry(formData, (name, value) => {
       buildPath(parsePropPath(name), value, obj, 0);
     });
 
@@ -16092,10 +16158,6 @@ function formDataToJSON(formData) {
 
   return null;
 }
-
-const DEFAULT_CONTENT_TYPE = {
-  'Content-Type': undefined
-};
 
 /**
  * It takes a string, tries to parse it, and if it fails, it returns the stringified version
@@ -16108,10 +16170,10 @@ const DEFAULT_CONTENT_TYPE = {
  * @returns {string} A stringified version of the rawValue.
  */
 function stringifySafely(rawValue, parser, encoder) {
-  if (utils$3.isString(rawValue)) {
+  if (utils$4.isString(rawValue)) {
     try {
       (parser || JSON.parse)(rawValue);
-      return utils$3.trim(rawValue);
+      return utils$4.trim(rawValue);
     } catch (e) {
       if (e.name !== 'SyntaxError') {
         throw e;
@@ -16131,13 +16193,13 @@ const defaults$2 = {
   transformRequest: [function transformRequest(data, headers) {
     const contentType = headers.getContentType() || '';
     const hasJSONContentType = contentType.indexOf('application/json') > -1;
-    const isObjectPayload = utils$3.isObject(data);
+    const isObjectPayload = utils$4.isObject(data);
 
-    if (isObjectPayload && utils$3.isHTMLForm(data)) {
+    if (isObjectPayload && utils$4.isHTMLForm(data)) {
       data = new FormData(data);
     }
 
-    const isFormData = utils$3.isFormData(data);
+    const isFormData = utils$4.isFormData(data);
 
     if (isFormData) {
       if (!hasJSONContentType) {
@@ -16146,18 +16208,18 @@ const defaults$2 = {
       return hasJSONContentType ? JSON.stringify(formDataToJSON(data)) : data;
     }
 
-    if (utils$3.isArrayBuffer(data) ||
-      utils$3.isBuffer(data) ||
-      utils$3.isStream(data) ||
-      utils$3.isFile(data) ||
-      utils$3.isBlob(data)
+    if (utils$4.isArrayBuffer(data) ||
+      utils$4.isBuffer(data) ||
+      utils$4.isStream(data) ||
+      utils$4.isFile(data) ||
+      utils$4.isBlob(data)
     ) {
       return data;
     }
-    if (utils$3.isArrayBufferView(data)) {
+    if (utils$4.isArrayBufferView(data)) {
       return data.buffer;
     }
-    if (utils$3.isURLSearchParams(data)) {
+    if (utils$4.isURLSearchParams(data)) {
       headers.setContentType('application/x-www-form-urlencoded;charset=utf-8', false);
       return data.toString();
     }
@@ -16169,7 +16231,7 @@ const defaults$2 = {
         return toURLEncodedForm(data, this.formSerializer).toString();
       }
 
-      if ((isFileList = utils$3.isFileList(data)) || contentType.indexOf('multipart/form-data') > -1) {
+      if ((isFileList = utils$4.isFileList(data)) || contentType.indexOf('multipart/form-data') > -1) {
         const _FormData = this.env && this.env.FormData;
 
         return toFormData(
@@ -16193,7 +16255,7 @@ const defaults$2 = {
     const forcedJSONParsing = transitional && transitional.forcedJSONParsing;
     const JSONRequested = this.responseType === 'json';
 
-    if (data && utils$3.isString(data) && ((forcedJSONParsing && !this.responseType) || JSONRequested)) {
+    if (data && utils$4.isString(data) && ((forcedJSONParsing && !this.responseType) || JSONRequested)) {
       const silentJSONParsing = transitional && transitional.silentJSONParsing;
       const strictJSONParsing = !silentJSONParsing && JSONRequested;
 
@@ -16235,24 +16297,21 @@ const defaults$2 = {
 
   headers: {
     common: {
-      'Accept': 'application/json, text/plain, */*'
+      'Accept': 'application/json, text/plain, */*',
+      'Content-Type': undefined
     }
   }
 };
 
-utils$3.forEach(['delete', 'get', 'head'], function forEachMethodNoData(method) {
+utils$4.forEach(['delete', 'get', 'head', 'post', 'put', 'patch'], (method) => {
   defaults$2.headers[method] = {};
-});
-
-utils$3.forEach(['post', 'put', 'patch'], function forEachMethodWithData(method) {
-  defaults$2.headers[method] = utils$3.merge(DEFAULT_CONTENT_TYPE);
 });
 
 var defaults$3 = defaults$2;
 
 // RawAxiosHeaders whose duplicates are ignored by node
 // c.f. https://nodejs.org/api/http.html#http_message_headers
-const ignoreDuplicateOf = utils$3.toObjectSet([
+const ignoreDuplicateOf = utils$4.toObjectSet([
   'age', 'authorization', 'content-length', 'content-type', 'etag',
   'expires', 'from', 'host', 'if-modified-since', 'if-unmodified-since',
   'last-modified', 'location', 'max-forwards', 'proxy-authorization',
@@ -16313,7 +16372,7 @@ function normalizeValue(value) {
     return value;
   }
 
-  return utils$3.isArray(value) ? value.map(normalizeValue) : String(value);
+  return utils$4.isArray(value) ? value.map(normalizeValue) : String(value);
 }
 
 function parseTokens(str) {
@@ -16328,22 +16387,24 @@ function parseTokens(str) {
   return tokens;
 }
 
-function isValidHeaderName(str) {
-  return /^[-_a-zA-Z]+$/.test(str.trim());
-}
+const isValidHeaderName = (str) => /^[-_a-zA-Z0-9^`|~,!#$%&'*+.]+$/.test(str.trim());
 
-function matchHeaderValue(context, value, header, filter) {
-  if (utils$3.isFunction(filter)) {
+function matchHeaderValue(context, value, header, filter, isHeaderNameFilter) {
+  if (utils$4.isFunction(filter)) {
     return filter.call(this, value, header);
   }
 
-  if (!utils$3.isString(value)) return;
+  if (isHeaderNameFilter) {
+    value = header;
+  }
 
-  if (utils$3.isString(filter)) {
+  if (!utils$4.isString(value)) return;
+
+  if (utils$4.isString(filter)) {
     return value.indexOf(filter) !== -1;
   }
 
-  if (utils$3.isRegExp(filter)) {
+  if (utils$4.isRegExp(filter)) {
     return filter.test(value);
   }
 }
@@ -16356,7 +16417,7 @@ function formatHeader(header) {
 }
 
 function buildAccessors(obj, header) {
-  const accessorName = utils$3.toCamelCase(' ' + header);
+  const accessorName = utils$4.toCamelCase(' ' + header);
 
   ['get', 'set', 'has'].forEach(methodName => {
     Object.defineProperty(obj, methodName + accessorName, {
@@ -16383,7 +16444,7 @@ class AxiosHeaders {
         throw new Error('header name must be a non-empty string');
       }
 
-      const key = utils$3.findKey(self, lHeader);
+      const key = utils$4.findKey(self, lHeader);
 
       if(!key || self[key] === undefined || _rewrite === true || (_rewrite === undefined && self[key] !== false)) {
         self[key || _header] = normalizeValue(_value);
@@ -16391,11 +16452,11 @@ class AxiosHeaders {
     }
 
     const setHeaders = (headers, _rewrite) =>
-      utils$3.forEach(headers, (_value, _header) => setHeader(_value, _header, _rewrite));
+      utils$4.forEach(headers, (_value, _header) => setHeader(_value, _header, _rewrite));
 
-    if (utils$3.isPlainObject(header) || header instanceof this.constructor) {
+    if (utils$4.isPlainObject(header) || header instanceof this.constructor) {
       setHeaders(header, valueOrRewrite);
-    } else if(utils$3.isString(header) && (header = header.trim()) && !isValidHeaderName(header)) {
+    } else if(utils$4.isString(header) && (header = header.trim()) && !isValidHeaderName(header)) {
       setHeaders(parseHeaders(header), valueOrRewrite);
     } else {
       header != null && setHeader(valueOrRewrite, header, rewrite);
@@ -16408,7 +16469,7 @@ class AxiosHeaders {
     header = normalizeHeader(header);
 
     if (header) {
-      const key = utils$3.findKey(this, header);
+      const key = utils$4.findKey(this, header);
 
       if (key) {
         const value = this[key];
@@ -16421,11 +16482,11 @@ class AxiosHeaders {
           return parseTokens(value);
         }
 
-        if (utils$3.isFunction(parser)) {
+        if (utils$4.isFunction(parser)) {
           return parser.call(this, value, key);
         }
 
-        if (utils$3.isRegExp(parser)) {
+        if (utils$4.isRegExp(parser)) {
           return parser.exec(value);
         }
 
@@ -16438,7 +16499,7 @@ class AxiosHeaders {
     header = normalizeHeader(header);
 
     if (header) {
-      const key = utils$3.findKey(this, header);
+      const key = utils$4.findKey(this, header);
 
       return !!(key && this[key] !== undefined && (!matcher || matchHeaderValue(this, this[key], key, matcher)));
     }
@@ -16454,7 +16515,7 @@ class AxiosHeaders {
       _header = normalizeHeader(_header);
 
       if (_header) {
-        const key = utils$3.findKey(self, _header);
+        const key = utils$4.findKey(self, _header);
 
         if (key && (!matcher || matchHeaderValue(self, self[key], key, matcher))) {
           delete self[key];
@@ -16464,7 +16525,7 @@ class AxiosHeaders {
       }
     }
 
-    if (utils$3.isArray(header)) {
+    if (utils$4.isArray(header)) {
       header.forEach(deleteHeader);
     } else {
       deleteHeader(header);
@@ -16480,7 +16541,7 @@ class AxiosHeaders {
 
     while (i--) {
       const key = keys[i];
-      if(!matcher || matchHeaderValue(this, this[key], key, matcher)) {
+      if(!matcher || matchHeaderValue(this, this[key], key, matcher, true)) {
         delete this[key];
         deleted = true;
       }
@@ -16493,8 +16554,8 @@ class AxiosHeaders {
     const self = this;
     const headers = {};
 
-    utils$3.forEach(this, (value, header) => {
-      const key = utils$3.findKey(headers, header);
+    utils$4.forEach(this, (value, header) => {
+      const key = utils$4.findKey(headers, header);
 
       if (key) {
         self[key] = normalizeValue(value);
@@ -16523,8 +16584,8 @@ class AxiosHeaders {
   toJSON(asStrings) {
     const obj = Object.create(null);
 
-    utils$3.forEach(this, (value, header) => {
-      value != null && value !== false && (obj[header] = asStrings && utils$3.isArray(value) ? value.join(', ') : value);
+    utils$4.forEach(this, (value, header) => {
+      value != null && value !== false && (obj[header] = asStrings && utils$4.isArray(value) ? value.join(', ') : value);
     });
 
     return obj;
@@ -16571,7 +16632,7 @@ class AxiosHeaders {
       }
     }
 
-    utils$3.isArray(header) ? header.forEach(defineAccessor) : defineAccessor(header);
+    utils$4.isArray(header) ? header.forEach(defineAccessor) : defineAccessor(header);
 
     return this;
   }
@@ -16579,8 +16640,18 @@ class AxiosHeaders {
 
 AxiosHeaders.accessor(['Content-Type', 'Content-Length', 'Accept', 'Accept-Encoding', 'User-Agent', 'Authorization']);
 
-utils$3.freezeMethods(AxiosHeaders.prototype);
-utils$3.freezeMethods(AxiosHeaders);
+// reserved names hotfix
+utils$4.reduceDescriptors(AxiosHeaders.prototype, ({value}, key) => {
+  let mapped = key[0].toUpperCase() + key.slice(1); // map `set` => `Set`
+  return {
+    get: () => value,
+    set(headerValue) {
+      this[mapped] = headerValue;
+    }
+  }
+});
+
+utils$4.freezeMethods(AxiosHeaders);
 
 var AxiosHeaders$1 = AxiosHeaders;
 
@@ -16598,7 +16669,7 @@ function transformData(fns, response) {
   const headers = AxiosHeaders$1.from(context.headers);
   let data = context.data;
 
-  utils$3.forEach(fns, function transform(fn) {
+  utils$4.forEach(fns, function transform(fn) {
     data = fn.call(config, data, headers.normalize(), response ? response.status : undefined);
   });
 
@@ -16626,7 +16697,7 @@ function CanceledError(message, config, request) {
   this.name = 'CanceledError';
 }
 
-utils$3.inherits(CanceledError, AxiosError, {
+utils$4.inherits(CanceledError, AxiosError, {
   __CANCEL__: true
 });
 
@@ -17449,7 +17520,7 @@ followRedirects$1.exports.wrap = wrap;
 var followRedirectsExports = followRedirects$1.exports;
 var followRedirects = /*@__PURE__*/getDefaultExportFromCjs(followRedirectsExports);
 
-const VERSION = "1.3.2";
+const VERSION = "1.6.1";
 
 function parseProtocol(url) {
   const match = /^([-+\w]{1,25})(:?\/\/|:)/.exec(url);
@@ -17590,7 +17661,7 @@ const kInternals = Symbol('internals');
 
 class AxiosTransformStream extends stream.Transform{
   constructor(options) {
-    options = utils$3.toFlatObject(options, {
+    options = utils$4.toFlatObject(options, {
       maxRate: 0,
       chunkSize: 64 * 1024,
       minChunkSize: 100,
@@ -17598,7 +17669,7 @@ class AxiosTransformStream extends stream.Transform{
       ticksRate: 2,
       samplesCount: 15
     }, null, (prop, source) => {
-      return !utils$3.isUndefined(source[prop]);
+      return !utils$4.isUndefined(source[prop]);
     });
 
     super({
@@ -17787,7 +17858,7 @@ const readBlob = async function* (blob) {
 
 var readBlob$1 = readBlob;
 
-const BOUNDARY_ALPHABET = utils$3.ALPHABET.ALPHA_DIGIT + '-_';
+const BOUNDARY_ALPHABET = utils$4.ALPHABET.ALPHA_DIGIT + '-_';
 
 const textEncoder = new TextEncoder();
 
@@ -17798,7 +17869,7 @@ const CRLF_BYTES_COUNT = 2;
 class FormDataPart {
   constructor(name, value) {
     const {escapeName} = this.constructor;
-    const isStringValue = utils$3.isString(value);
+    const isStringValue = utils$4.isString(value);
 
     let headers = `Content-Disposition: form-data; name="${escapeName(name)}"${
       !isStringValue && value.name ? `; filename="${escapeName(value.name)}"` : ''
@@ -17825,7 +17896,7 @@ class FormDataPart {
 
     const {value} = this;
 
-    if(utils$3.isTypedArray(value)) {
+    if(utils$4.isTypedArray(value)) {
       yield value;
     } else {
       yield* readBlob$1(value);
@@ -17847,10 +17918,10 @@ const formDataToStream = (form, headersHandler, options) => {
   const {
     tag = 'form-data-boundary',
     size = 25,
-    boundary = tag + '-' + utils$3.generateString(size, BOUNDARY_ALPHABET)
+    boundary = tag + '-' + utils$4.generateString(size, BOUNDARY_ALPHABET)
   } = options || {};
 
-  if(!utils$3.isFormData(form)) {
+  if(!utils$4.isFormData(form)) {
     throw TypeError('FormData instance required');
   }
 
@@ -17870,7 +17941,7 @@ const formDataToStream = (form, headersHandler, options) => {
 
   contentLength += boundaryBytes.byteLength * parts.length;
 
-  contentLength = utils$3.toFiniteNumber(contentLength);
+  contentLength = utils$4.toFiniteNumber(contentLength);
 
   const computedHeaders = {
     'Content-Type': `multipart/form-data; boundary=${boundary}`
@@ -17919,6 +17990,21 @@ class ZlibHeaderTransformStream extends stream.Transform {
 
 var ZlibHeaderTransformStream$1 = ZlibHeaderTransformStream;
 
+const callbackify = (fn, reducer) => {
+  return utils$4.isAsyncFn(fn) ? function (...args) {
+    const cb = args.pop();
+    fn.apply(this, args).then((value) => {
+      try {
+        reducer ? cb(null, ...reducer(value)) : cb(null, value);
+      } catch (err) {
+        cb(err);
+      }
+    }, cb);
+  } : fn;
+};
+
+var callbackify$1 = callbackify;
+
 const zlibOptions = {
   flush: zlib.constants.Z_SYNC_FLUSH,
   finishFlush: zlib.constants.Z_SYNC_FLUSH
@@ -17929,7 +18015,7 @@ const brotliOptions = {
   finishFlush: zlib.constants.BROTLI_OPERATION_FLUSH
 };
 
-const isBrotliSupported = utils$3.isFunction(zlib.createBrotliDecompress);
+const isBrotliSupported = utils$4.isFunction(zlib.createBrotliDecompress);
 
 const {http: httpFollow, https: httpsFollow} = followRedirects;
 
@@ -18009,28 +18095,73 @@ function setProxy(options, configProxy, location) {
   };
 }
 
-const isHttpAdapterSupported = typeof process !== 'undefined' && utils$3.kindOf(process) === 'process';
+const isHttpAdapterSupported = typeof process !== 'undefined' && utils$4.kindOf(process) === 'process';
+
+// temporary hotfix
+
+const wrapAsync = (asyncExecutor) => {
+  return new Promise((resolve, reject) => {
+    let onDone;
+    let isDone;
+
+    const done = (value, isRejected) => {
+      if (isDone) return;
+      isDone = true;
+      onDone && onDone(value, isRejected);
+    };
+
+    const _resolve = (value) => {
+      done(value);
+      resolve(value);
+    };
+
+    const _reject = (reason) => {
+      done(reason, true);
+      reject(reason);
+    };
+
+    asyncExecutor(_resolve, _reject, (onDoneHandler) => (onDone = onDoneHandler)).catch(_reject);
+  })
+};
+
+const resolveFamily = ({address, family}) => {
+  if (!utils$4.isString(address)) {
+    throw TypeError('address must be a string');
+  }
+  return ({
+    address,
+    family: family || (address.indexOf('.') < 0 ? 6 : 4)
+  });
+};
+
+const buildAddressEntry = (address, family) => resolveFamily(utils$4.isObject(address) ? address : {address, family});
 
 /*eslint consistent-return:0*/
 var httpAdapter = isHttpAdapterSupported && function httpAdapter(config) {
-  /*eslint no-async-promise-executor:0*/
-  return new Promise(async function dispatchHttpRequest(resolvePromise, rejectPromise) {
-    let data = config.data;
-    const responseType = config.responseType;
-    const responseEncoding = config.responseEncoding;
+  return wrapAsync(async function dispatchHttpRequest(resolve, reject, onDone) {
+    let {data, lookup, family} = config;
+    const {responseType, responseEncoding} = config;
     const method = config.method.toUpperCase();
-    let isFinished;
     let isDone;
     let rejected = false;
     let req;
 
+    if (lookup) {
+      const _lookup = callbackify$1(lookup, (value) => utils$4.isArray(value) ? value : [value]);
+      // hotfix to support opt.all option which is required for node 20.x
+      lookup = (hostname, opt, cb) => {
+        _lookup(hostname, opt, (err, arg0, arg1) => {
+          const addresses = utils$4.isArray(arg0) ? arg0.map(addr => buildAddressEntry(addr)) : [buildAddressEntry(arg0, arg1)];
+
+          opt.all ? cb(err, addresses) : cb(err, addresses[0].address, addresses[0].family);
+        });
+      };
+    }
+
     // temporary internal emitter until the AxiosRequest class will be implemented
     const emitter = new require$$4();
 
-    function onFinished() {
-      if (isFinished) return;
-      isFinished = true;
-
+    const onFinished = () => {
       if (config.cancelToken) {
         config.cancelToken.unsubscribe(abort);
       }
@@ -18040,28 +18171,15 @@ var httpAdapter = isHttpAdapterSupported && function httpAdapter(config) {
       }
 
       emitter.removeAllListeners();
-    }
+    };
 
-    function done(value, isRejected) {
-      if (isDone) return;
-
+    onDone((value, isRejected) => {
       isDone = true;
-
       if (isRejected) {
         rejected = true;
         onFinished();
       }
-
-      isRejected ? rejectPromise(value) : resolvePromise(value);
-    }
-
-    const resolve = function resolve(value) {
-      done(value);
-    };
-
-    const reject = function reject(value) {
-      done(value, true);
-    };
+    });
 
     function abort(reason) {
       emitter.emit('abort', !reason || reason.type ? new CanceledError(null, config, req) : reason);
@@ -18105,7 +18223,7 @@ var httpAdapter = isHttpAdapterSupported && function httpAdapter(config) {
         convertedData = convertedData.toString(responseEncoding);
 
         if (!responseEncoding || responseEncoding === 'utf8') {
-          convertedData = utils$3.stripBOM(convertedData);
+          convertedData = utils$4.stripBOM(convertedData);
         }
       } else if (responseType === 'stream') {
         convertedData = stream.Readable.from(convertedData);
@@ -18143,7 +18261,7 @@ var httpAdapter = isHttpAdapterSupported && function httpAdapter(config) {
     let maxDownloadRate = undefined;
 
     // support for spec compliant FormData objects
-    if (utils$3.isSpecCompliantForm(data)) {
+    if (utils$4.isSpecCompliantForm(data)) {
       const userBoundary = headers.getContentType(/boundary=([-_\w\d]{10,70})/i);
 
       data = formDataToStream$1(data, (formHeaders) => {
@@ -18153,25 +18271,25 @@ var httpAdapter = isHttpAdapterSupported && function httpAdapter(config) {
         boundary: userBoundary && userBoundary[1] || undefined
       });
       // support for https://www.npmjs.com/package/form-data api
-    } else if (utils$3.isFormData(data) && utils$3.isFunction(data.getHeaders)) {
+    } else if (utils$4.isFormData(data) && utils$4.isFunction(data.getHeaders)) {
       headers.set(data.getHeaders());
 
       if (!headers.hasContentLength()) {
         try {
           const knownLength = await require$$1.promisify(data.getLength).call(data);
-          headers.setContentLength(knownLength);
+          Number.isFinite(knownLength) && knownLength >= 0 && headers.setContentLength(knownLength);
           /*eslint no-empty:0*/
         } catch (e) {
         }
       }
-    } else if (utils$3.isBlob(data)) {
+    } else if (utils$4.isBlob(data)) {
       data.size && headers.setContentType(data.type || 'application/octet-stream');
       headers.setContentLength(data.size || 0);
       data = stream.Readable.from(readBlob$1(data));
-    } else if (data && !utils$3.isStream(data)) {
-      if (Buffer.isBuffer(data)) ; else if (utils$3.isArrayBuffer(data)) {
+    } else if (data && !utils$4.isStream(data)) {
+      if (Buffer.isBuffer(data)) ; else if (utils$4.isArrayBuffer(data)) {
         data = Buffer.from(new Uint8Array(data));
-      } else if (utils$3.isString(data)) {
+      } else if (utils$4.isString(data)) {
         data = Buffer.from(data, 'utf-8');
       } else {
         return reject(new AxiosError(
@@ -18193,9 +18311,9 @@ var httpAdapter = isHttpAdapterSupported && function httpAdapter(config) {
       }
     }
 
-    const contentLength = utils$3.toFiniteNumber(headers.getContentLength());
+    const contentLength = utils$4.toFiniteNumber(headers.getContentLength());
 
-    if (utils$3.isArray(maxRate)) {
+    if (utils$4.isArray(maxRate)) {
       maxUploadRate = maxRate[0];
       maxDownloadRate = maxRate[1];
     } else {
@@ -18203,14 +18321,14 @@ var httpAdapter = isHttpAdapterSupported && function httpAdapter(config) {
     }
 
     if (data && (onUploadProgress || maxUploadRate)) {
-      if (!utils$3.isStream(data)) {
+      if (!utils$4.isStream(data)) {
         data = stream.Readable.from(data, {objectMode: false});
       }
 
       data = stream.pipeline([data, new AxiosTransformStream$1({
         length: contentLength,
-        maxRate: utils$3.toFiniteNumber(maxUploadRate)
-      })], utils$3.noop);
+        maxRate: utils$4.toFiniteNumber(maxUploadRate)
+      })], utils$4.noop);
 
       onUploadProgress && data.on('progress', progress => {
         onUploadProgress(Object.assign(progress, {
@@ -18263,9 +18381,13 @@ var httpAdapter = isHttpAdapterSupported && function httpAdapter(config) {
       agents: { http: config.httpAgent, https: config.httpsAgent },
       auth,
       protocol,
+      family,
       beforeRedirect: dispatchBeforeRedirect,
       beforeRedirects: {}
     };
+
+    // cacheable-lookup integration hotfix
+    !utils$4.isUndefined(lookup) && (options.lookup = lookup);
 
     if (config.socketPath) {
       options.socketPath = config.socketPath;
@@ -18313,8 +18435,8 @@ var httpAdapter = isHttpAdapterSupported && function httpAdapter(config) {
 
       if (onDownloadProgress) {
         const transformStream = new AxiosTransformStream$1({
-          length: utils$3.toFiniteNumber(responseLength),
-          maxRate: utils$3.toFiniteNumber(maxDownloadRate)
+          length: utils$4.toFiniteNumber(responseLength),
+          maxRate: utils$4.toFiniteNumber(maxDownloadRate)
         });
 
         onDownloadProgress && transformStream.on('progress', progress => {
@@ -18340,7 +18462,7 @@ var httpAdapter = isHttpAdapterSupported && function httpAdapter(config) {
           delete res.headers['content-encoding'];
         }
 
-        switch (res.headers['content-encoding']) {
+        switch ((res.headers['content-encoding'] || '').toLowerCase()) {
         /*eslint default-case:0*/
         case 'gzip':
         case 'x-gzip':
@@ -18369,7 +18491,7 @@ var httpAdapter = isHttpAdapterSupported && function httpAdapter(config) {
         }
       }
 
-      responseStream = streams.length > 1 ? stream.pipeline(streams, utils$3.noop) : streams[0];
+      responseStream = streams.length > 1 ? stream.pipeline(streams, utils$4.noop) : streams[0];
 
       const offListeners = stream.finished(responseStream, () => {
         offListeners();
@@ -18431,12 +18553,12 @@ var httpAdapter = isHttpAdapterSupported && function httpAdapter(config) {
             if (responseType !== 'arraybuffer') {
               responseData = responseData.toString(responseEncoding);
               if (!responseEncoding || responseEncoding === 'utf8') {
-                responseData = utils$3.stripBOM(responseData);
+                responseData = utils$4.stripBOM(responseData);
               }
             }
             response.data = responseData;
           } catch (err) {
-            reject(AxiosError.from(err, null, config, response.request, response));
+            return reject(AxiosError.from(err, null, config, response.request, response));
           }
           settle(resolve, reject, response);
         });
@@ -18473,7 +18595,7 @@ var httpAdapter = isHttpAdapterSupported && function httpAdapter(config) {
       // This is forcing a int timeout to avoid problems if the `req` interface doesn't handle other types.
       const timeout = parseInt(config.timeout, 10);
 
-      if (isNaN(timeout)) {
+      if (Number.isNaN(timeout)) {
         reject(new AxiosError(
           'error trying to parse `config.timeout` to int',
           AxiosError.ERR_BAD_OPTION_VALUE,
@@ -18508,7 +18630,7 @@ var httpAdapter = isHttpAdapterSupported && function httpAdapter(config) {
 
 
     // Send the request
-    if (utils$3.isStream(data)) {
+    if (utils$4.isStream(data)) {
       let ended = false;
       let errored = false;
 
@@ -18534,7 +18656,7 @@ var httpAdapter = isHttpAdapterSupported && function httpAdapter(config) {
   });
 };
 
-var cookies = platform.isStandardBrowserEnv ?
+var cookies = platform.hasStandardBrowserEnv ?
 
 // Standard browser envs support document.cookie
   (function standardBrowserEnv() {
@@ -18543,15 +18665,15 @@ var cookies = platform.isStandardBrowserEnv ?
         const cookie = [];
         cookie.push(name + '=' + encodeURIComponent(value));
 
-        if (utils$3.isNumber(expires)) {
+        if (utils$4.isNumber(expires)) {
           cookie.push('expires=' + new Date(expires).toGMTString());
         }
 
-        if (utils$3.isString(path)) {
+        if (utils$4.isString(path)) {
           cookie.push('path=' + path);
         }
 
-        if (utils$3.isString(domain)) {
+        if (utils$4.isString(domain)) {
           cookie.push('domain=' + domain);
         }
 
@@ -18582,7 +18704,7 @@ var cookies = platform.isStandardBrowserEnv ?
     };
   })();
 
-var isURLSameOrigin = platform.isStandardBrowserEnv ?
+var isURLSameOrigin = platform.hasStandardBrowserEnv ?
 
 // Standard browser envs have full support of the APIs needed to test
 // whether the request URL is of the same origin as current location.
@@ -18632,7 +18754,7 @@ var isURLSameOrigin = platform.isStandardBrowserEnv ?
     * @returns {boolean} True if URL shares the same origin, otherwise false
     */
     return function isURLSameOrigin(requestURL) {
-      const parsed = (utils$3.isString(requestURL)) ? resolveURL(requestURL) : requestURL;
+      const parsed = (utils$4.isString(requestURL)) ? resolveURL(requestURL) : requestURL;
       return (parsed.protocol === originURL.protocol &&
           parsed.host === originURL.host);
     };
@@ -18692,8 +18814,16 @@ var xhrAdapter = isXHRAdapterSupported && function (config) {
       }
     }
 
-    if (utils$3.isFormData(requestData) && (platform.isStandardBrowserEnv || platform.isStandardBrowserWebWorkerEnv)) {
-      requestHeaders.setContentType(false); // Let the browser set it
+    let contentType;
+
+    if (utils$4.isFormData(requestData)) {
+      if (platform.hasStandardBrowserEnv || platform.hasStandardBrowserWebWorkerEnv) {
+        requestHeaders.setContentType(false); // Let the browser set it
+      } else if ((contentType = requestHeaders.getContentType()) !== false) {
+        // fix semicolon duplication issue for ReactNative FormData implementation
+        const [type, ...tokens] = contentType ? contentType.split(';').map(token => token.trim()).filter(Boolean) : [];
+        requestHeaders.setContentType([type || 'multipart/form-data', ...tokens].join('; '));
+      }
     }
 
     let request = new XMLHttpRequest();
@@ -18808,10 +18938,10 @@ var xhrAdapter = isXHRAdapterSupported && function (config) {
     // Add xsrf header
     // This is only done if running in a standard browser environment.
     // Specifically not if we're in a web worker, or react-native.
-    if (platform.isStandardBrowserEnv) {
+    if (platform.hasStandardBrowserEnv) {
       // Add xsrf header
-      const xsrfValue = (config.withCredentials || isURLSameOrigin(fullPath))
-        && config.xsrfCookieName && cookies.read(config.xsrfCookieName);
+      // regarding CVE-2023-45857 config.withCredentials condition was removed temporarily
+      const xsrfValue = isURLSameOrigin(fullPath) && config.xsrfCookieName && cookies.read(config.xsrfCookieName);
 
       if (xsrfValue) {
         requestHeaders.set(config.xsrfHeaderName, xsrfValue);
@@ -18823,13 +18953,13 @@ var xhrAdapter = isXHRAdapterSupported && function (config) {
 
     // Add headers to the request
     if ('setRequestHeader' in request) {
-      utils$3.forEach(requestHeaders.toJSON(), function setRequestHeader(val, key) {
+      utils$4.forEach(requestHeaders.toJSON(), function setRequestHeader(val, key) {
         request.setRequestHeader(key, val);
       });
     }
 
     // Add withCredentials to request if needed
-    if (!utils$3.isUndefined(config.withCredentials)) {
+    if (!utils$4.isUndefined(config.withCredentials)) {
       request.withCredentials = !!config.withCredentials;
     }
 
@@ -18884,8 +19014,8 @@ const knownAdapters = {
   xhr: xhrAdapter
 };
 
-utils$3.forEach(knownAdapters, (fn, value) => {
-  if(fn) {
+utils$4.forEach(knownAdapters, (fn, value) => {
+  if (fn) {
     try {
       Object.defineProperty(fn, 'name', {value});
     } catch (e) {
@@ -18895,38 +19025,56 @@ utils$3.forEach(knownAdapters, (fn, value) => {
   }
 });
 
+const renderReason = (reason) => `- ${reason}`;
+
+const isResolvedHandle = (adapter) => utils$4.isFunction(adapter) || adapter === null || adapter === false;
+
 var adapters = {
   getAdapter: (adapters) => {
-    adapters = utils$3.isArray(adapters) ? adapters : [adapters];
+    adapters = utils$4.isArray(adapters) ? adapters : [adapters];
 
     const {length} = adapters;
     let nameOrAdapter;
     let adapter;
 
+    const rejectedReasons = {};
+
     for (let i = 0; i < length; i++) {
       nameOrAdapter = adapters[i];
-      if((adapter = utils$3.isString(nameOrAdapter) ? knownAdapters[nameOrAdapter.toLowerCase()] : nameOrAdapter)) {
+      let id;
+
+      adapter = nameOrAdapter;
+
+      if (!isResolvedHandle(nameOrAdapter)) {
+        adapter = knownAdapters[(id = String(nameOrAdapter)).toLowerCase()];
+
+        if (adapter === undefined) {
+          throw new AxiosError(`Unknown adapter '${id}'`);
+        }
+      }
+
+      if (adapter) {
         break;
       }
+
+      rejectedReasons[id || '#' + i] = adapter;
     }
 
     if (!adapter) {
-      if (adapter === false) {
-        throw new AxiosError(
-          `Adapter ${nameOrAdapter} is not supported by the environment`,
-          'ERR_NOT_SUPPORT'
+
+      const reasons = Object.entries(rejectedReasons)
+        .map(([id, state]) => `adapter ${id} ` +
+          (state === false ? 'is not supported by the environment' : 'is not available in the build')
         );
-      }
 
-      throw new Error(
-        utils$3.hasOwnProp(knownAdapters, nameOrAdapter) ?
-          `Adapter '${nameOrAdapter}' is not available in the build` :
-          `Unknown adapter '${nameOrAdapter}'`
+      let s = length ?
+        (reasons.length > 1 ? 'since :\n' + reasons.map(renderReason).join('\n') : ' ' + renderReason(reasons[0])) :
+        'as no adapter specified';
+
+      throw new AxiosError(
+        `There is no suitable adapter to dispatch the request ` + s,
+        'ERR_NOT_SUPPORT'
       );
-    }
-
-    if (!utils$3.isFunction(adapter)) {
-      throw new TypeError('adapter is not a function');
     }
 
     return adapter;
@@ -19024,11 +19172,11 @@ function mergeConfig(config1, config2) {
   const config = {};
 
   function getMergedValue(target, source, caseless) {
-    if (utils$3.isPlainObject(target) && utils$3.isPlainObject(source)) {
-      return utils$3.merge.call({caseless}, target, source);
-    } else if (utils$3.isPlainObject(source)) {
-      return utils$3.merge({}, source);
-    } else if (utils$3.isArray(source)) {
+    if (utils$4.isPlainObject(target) && utils$4.isPlainObject(source)) {
+      return utils$4.merge.call({caseless}, target, source);
+    } else if (utils$4.isPlainObject(source)) {
+      return utils$4.merge({}, source);
+    } else if (utils$4.isArray(source)) {
       return source.slice();
     }
     return source;
@@ -19036,25 +19184,25 @@ function mergeConfig(config1, config2) {
 
   // eslint-disable-next-line consistent-return
   function mergeDeepProperties(a, b, caseless) {
-    if (!utils$3.isUndefined(b)) {
+    if (!utils$4.isUndefined(b)) {
       return getMergedValue(a, b, caseless);
-    } else if (!utils$3.isUndefined(a)) {
+    } else if (!utils$4.isUndefined(a)) {
       return getMergedValue(undefined, a, caseless);
     }
   }
 
   // eslint-disable-next-line consistent-return
   function valueFromConfig2(a, b) {
-    if (!utils$3.isUndefined(b)) {
+    if (!utils$4.isUndefined(b)) {
       return getMergedValue(undefined, b);
     }
   }
 
   // eslint-disable-next-line consistent-return
   function defaultToConfig2(a, b) {
-    if (!utils$3.isUndefined(b)) {
+    if (!utils$4.isUndefined(b)) {
       return getMergedValue(undefined, b);
-    } else if (!utils$3.isUndefined(a)) {
+    } else if (!utils$4.isUndefined(a)) {
       return getMergedValue(undefined, a);
     }
   }
@@ -19099,10 +19247,10 @@ function mergeConfig(config1, config2) {
     headers: (a, b) => mergeDeepProperties(headersToObject(a), headersToObject(b), true)
   };
 
-  utils$3.forEach(Object.keys(config1).concat(Object.keys(config2)), function computeConfigValue(prop) {
+  utils$4.forEach(Object.keys(Object.assign({}, config1, config2)), function computeConfigValue(prop) {
     const merge = mergeMap[prop] || mergeDeepProperties;
     const configValue = merge(config1[prop], config2[prop], prop);
-    (utils$3.isUndefined(configValue) && merge !== mergeDirectKeys) || (config[prop] = configValue);
+    (utils$4.isUndefined(configValue) && merge !== mergeDirectKeys) || (config[prop] = configValue);
   });
 
   return config;
@@ -19243,25 +19391,29 @@ class Axios {
       }, false);
     }
 
-    if (paramsSerializer !== undefined) {
-      validator.assertOptions(paramsSerializer, {
-        encode: validators.function,
-        serialize: validators.function
-      }, true);
+    if (paramsSerializer != null) {
+      if (utils$4.isFunction(paramsSerializer)) {
+        config.paramsSerializer = {
+          serialize: paramsSerializer
+        };
+      } else {
+        validator.assertOptions(paramsSerializer, {
+          encode: validators.function,
+          serialize: validators.function
+        }, true);
+      }
     }
 
     // Set config.method
     config.method = (config.method || this.defaults.method || 'get').toLowerCase();
 
-    let contextHeaders;
-
     // Flatten headers
-    contextHeaders = headers && utils$3.merge(
+    let contextHeaders = headers && utils$4.merge(
       headers.common,
       headers[config.method]
     );
 
-    contextHeaders && utils$3.forEach(
+    headers && utils$4.forEach(
       ['delete', 'get', 'head', 'post', 'put', 'patch', 'common'],
       (method) => {
         delete headers[method];
@@ -19348,7 +19500,7 @@ class Axios {
 }
 
 // Provide aliases for supported request methods
-utils$3.forEach(['delete', 'get', 'head', 'options'], function forEachMethodNoData(method) {
+utils$4.forEach(['delete', 'get', 'head', 'options'], function forEachMethodNoData(method) {
   /*eslint func-names:0*/
   Axios.prototype[method] = function(url, config) {
     return this.request(mergeConfig(config || {}, {
@@ -19359,7 +19511,7 @@ utils$3.forEach(['delete', 'get', 'head', 'options'], function forEachMethodNoDa
   };
 });
 
-utils$3.forEach(['post', 'put', 'patch'], function forEachMethodWithData(method) {
+utils$4.forEach(['post', 'put', 'patch'], function forEachMethodWithData(method) {
   /*eslint func-names:0*/
 
   function generateHTTPMethod(isForm) {
@@ -19535,7 +19687,7 @@ function spread(callback) {
  * @returns {boolean} True if the payload is an error thrown by Axios, otherwise false
  */
 function isAxiosError(payload) {
-  return utils$3.isObject(payload) && (payload.isAxiosError === true);
+  return utils$4.isObject(payload) && (payload.isAxiosError === true);
 }
 
 const HttpStatusCode = {
@@ -19622,10 +19774,10 @@ function createInstance(defaultConfig) {
   const instance = bind$2(Axios$1.prototype.request, context);
 
   // Copy axios.prototype to instance
-  utils$3.extend(instance, Axios$1.prototype, context, {allOwnKeys: true});
+  utils$4.extend(instance, Axios$1.prototype, context, {allOwnKeys: true});
 
   // Copy context to instance
-  utils$3.extend(instance, context, null, {allOwnKeys: true});
+  utils$4.extend(instance, context, null, {allOwnKeys: true});
 
   // Factory for creating new instances
   instance.create = function create(instanceConfig) {
@@ -19669,7 +19821,9 @@ axios.mergeConfig = mergeConfig;
 
 axios.AxiosHeaders = AxiosHeaders$1;
 
-axios.formToJSON = thing => formDataToJSON(utils$3.isHTMLForm(thing) ? new FormData(thing) : thing);
+axios.formToJSON = thing => formDataToJSON(utils$4.isHTMLForm(thing) ? new FormData(thing) : thing);
+
+axios.getAdapter = adapters.getAdapter;
 
 axios.HttpStatusCode = HttpStatusCode$1;
 
