@@ -15985,8 +15985,6 @@ class InterceptorManager {
   }
 }
 
-var InterceptorManager$1 = InterceptorManager;
-
 var transitionalDefaults = {
   silentJSONParsing: true,
   forcedJSONParsing: true,
@@ -17856,8 +17854,6 @@ const readBlob = async function* (blob) {
   }
 };
 
-var readBlob$1 = readBlob;
-
 const BOUNDARY_ALPHABET = utils$4.ALPHABET.ALPHA_DIGIT + '-_';
 
 const textEncoder = new TextEncoder();
@@ -17899,7 +17895,7 @@ class FormDataPart {
     if(utils$4.isTypedArray(value)) {
       yield value;
     } else {
-      yield* readBlob$1(value);
+      yield* readBlob(value);
     }
 
     yield CRLF_BYTES;
@@ -17963,8 +17959,6 @@ const formDataToStream = (form, headersHandler, options) => {
   })());
 };
 
-var formDataToStream$1 = formDataToStream;
-
 class ZlibHeaderTransformStream extends stream.Transform {
   __transform(chunk, encoding, callback) {
     this.push(chunk);
@@ -17988,8 +17982,6 @@ class ZlibHeaderTransformStream extends stream.Transform {
   }
 }
 
-var ZlibHeaderTransformStream$1 = ZlibHeaderTransformStream;
-
 const callbackify = (fn, reducer) => {
   return utils$4.isAsyncFn(fn) ? function (...args) {
     const cb = args.pop();
@@ -18002,8 +17994,6 @@ const callbackify = (fn, reducer) => {
     }, cb);
   } : fn;
 };
-
-var callbackify$1 = callbackify;
 
 const zlibOptions = {
   flush: zlib.constants.Z_SYNC_FLUSH,
@@ -18147,7 +18137,7 @@ var httpAdapter = isHttpAdapterSupported && function httpAdapter(config) {
     let req;
 
     if (lookup) {
-      const _lookup = callbackify$1(lookup, (value) => utils$4.isArray(value) ? value : [value]);
+      const _lookup = callbackify(lookup, (value) => utils$4.isArray(value) ? value : [value]);
       // hotfix to support opt.all option which is required for node 20.x
       lookup = (hostname, opt, cb) => {
         _lookup(hostname, opt, (err, arg0, arg1) => {
@@ -18264,7 +18254,7 @@ var httpAdapter = isHttpAdapterSupported && function httpAdapter(config) {
     if (utils$4.isSpecCompliantForm(data)) {
       const userBoundary = headers.getContentType(/boundary=([-_\w\d]{10,70})/i);
 
-      data = formDataToStream$1(data, (formHeaders) => {
+      data = formDataToStream(data, (formHeaders) => {
         headers.set(formHeaders);
       }, {
         tag: `axios-${VERSION}-boundary`,
@@ -18285,7 +18275,7 @@ var httpAdapter = isHttpAdapterSupported && function httpAdapter(config) {
     } else if (utils$4.isBlob(data)) {
       data.size && headers.setContentType(data.type || 'application/octet-stream');
       headers.setContentLength(data.size || 0);
-      data = stream.Readable.from(readBlob$1(data));
+      data = stream.Readable.from(readBlob(data));
     } else if (data && !utils$4.isStream(data)) {
       if (Buffer.isBuffer(data)) ; else if (utils$4.isArrayBuffer(data)) {
         data = Buffer.from(new Uint8Array(data));
@@ -18475,7 +18465,7 @@ var httpAdapter = isHttpAdapterSupported && function httpAdapter(config) {
           delete res.headers['content-encoding'];
           break;
         case 'deflate':
-          streams.push(new ZlibHeaderTransformStream$1());
+          streams.push(new ZlibHeaderTransformStream());
 
           // add the unzipper to the body stream processing pipeline
           streams.push(zlib.createUnzip(zlibOptions));
@@ -19356,8 +19346,8 @@ class Axios {
   constructor(instanceConfig) {
     this.defaults = instanceConfig;
     this.interceptors = {
-      request: new InterceptorManager$1(),
-      response: new InterceptorManager$1()
+      request: new InterceptorManager(),
+      response: new InterceptorManager()
     };
   }
 
@@ -19828,9 +19818,6 @@ axios.getAdapter = adapters.getAdapter;
 axios.HttpStatusCode = HttpStatusCode$1;
 
 axios.default = axios;
-
-// this module should only have a default export
-var axios$1 = axios;
 
 /* eslint complexity: [2, 18], max-statements: [2, 33] */
 var shams = function hasSymbols() {
@@ -21869,7 +21856,7 @@ class Client {
       headers["User-Agent"] = "znotify-js-sdk/" + version;
     }
     this.user_secret = user_id;
-    this.session = axios$1.create({
+    this.session = axios.create({
       baseURL: endpoint ?? ENDPOINT,
       headers,
       timeout: 1e4
