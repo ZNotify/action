@@ -32,6 +32,6 @@
     "znotify": "^0.9.1"
   },
   "devDependencies": {
-    "@tsconfig/node20": "^20.1.2"
+    "@tsconfig/node20": "^20.1.3"
   }
 }
