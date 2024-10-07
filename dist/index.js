@@ -1,13 +1,14 @@
 import require$$0$1 from 'os';
-import require$$0$2 from 'fs';
-import require$$1$2 from 'path';
+import require$$0$2 from 'crypto';
+import require$$1 from 'fs';
+import require$$1$3 from 'path';
 import require$$2 from 'http';
 import require$$3 from 'https';
 import 'net';
-import require$$1 from 'tls';
+import require$$1$1 from 'tls';
 import require$$4, { EventEmitter } from 'events';
 import require$$5 from 'assert';
-import require$$1$1, { TextEncoder as TextEncoder$1 } from 'util';
+import require$$1$2, { TextEncoder as TextEncoder$1 } from 'util';
 import require$$0$3 from 'string_decoder';
 import require$$2$1 from 'child_process';
 import require$$6 from 'timers';
@@ -210,7 +211,8 @@ function requireFileCommand () {
 	fileCommand.prepareKeyValueMessage = fileCommand.issueFileCommand = void 0;
 	// We use any as a valid input type
 	/* eslint-disable @typescript-eslint/no-explicit-any */
-	const fs = __importStar(require$$0$2);
+	const crypto = __importStar(require$$0$2);
+	const fs = __importStar(require$$1);
 	const os = __importStar(require$$0$1);
 	const utils_1 = requireUtils$1();
 	function issueFileCommand(command, message) {
@@ -326,11 +328,11 @@ var hasRequiredTunnel$1;
 function requireTunnel$1 () {
 	if (hasRequiredTunnel$1) return tunnel$1;
 	hasRequiredTunnel$1 = 1;
-	var tls = require$$1;
+	var tls = require$$1$1;
 	var http = require$$2;
 	var https = require$$3;
 	var events = require$$4;
-	var util = require$$1$1;
+	var util = require$$1$2;
 
 
 	tunnel$1.httpOverHttp = httpOverHttp;
@@ -1407,7 +1409,7 @@ function requireSummary () {
 		Object.defineProperty(exports, "__esModule", { value: true });
 		exports.summary = exports.markdownSummary = exports.SUMMARY_DOCS_URL = exports.SUMMARY_ENV_VAR = void 0;
 		const os_1 = require$$0$1;
-		const fs_1 = require$$0$2;
+		const fs_1 = require$$1;
 		const { access, appendFile, writeFile } = fs_1.promises;
 		exports.SUMMARY_ENV_VAR = 'GITHUB_STEP_SUMMARY';
 		exports.SUMMARY_DOCS_URL = 'https://docs.github.com/actions/using-workflows/workflow-commands-for-github-actions#adding-a-job-summary';
@@ -1713,7 +1715,7 @@ function requirePathUtils () {
 	};
 	Object.defineProperty(pathUtils, "__esModule", { value: true });
 	pathUtils.toPlatformPath = pathUtils.toWin32Path = pathUtils.toPosixPath = void 0;
-	const path = __importStar(require$$1$2);
+	const path = __importStar(require$$1$3);
 	/**
 	 * toPosixPath converts the given path to the posix form. On Windows, \\ will be
 	 * replaced with /.
@@ -1799,8 +1801,8 @@ function requireIoUtil () {
 		var _a;
 		Object.defineProperty(exports, "__esModule", { value: true });
 		exports.getCmdPath = exports.tryGetExecutablePath = exports.isRooted = exports.isDirectory = exports.exists = exports.READONLY = exports.UV_FS_O_EXLOCK = exports.IS_WINDOWS = exports.unlink = exports.symlink = exports.stat = exports.rmdir = exports.rm = exports.rename = exports.readlink = exports.readdir = exports.open = exports.mkdir = exports.lstat = exports.copyFile = exports.chmod = void 0;
-		const fs = __importStar(require$$0$2);
-		const path = __importStar(require$$1$2);
+		const fs = __importStar(require$$1);
+		const path = __importStar(require$$1$3);
 		_a = fs.promises
 		// export const {open} = 'fs'
 		, exports.chmod = _a.chmod, exports.copyFile = _a.copyFile, exports.lstat = _a.lstat, exports.mkdir = _a.mkdir, exports.open = _a.open, exports.readdir = _a.readdir, exports.readlink = _a.readlink, exports.rename = _a.rename, exports.rm = _a.rm, exports.rmdir = _a.rmdir, exports.stat = _a.stat, exports.symlink = _a.symlink, exports.unlink = _a.unlink;
@@ -1990,7 +1992,7 @@ function requireIo () {
 	Object.defineProperty(io, "__esModule", { value: true });
 	io.findInPath = io.which = io.mkdirP = io.rmRF = io.mv = io.cp = void 0;
 	const assert_1 = require$$5;
-	const path = __importStar(require$$1$2);
+	const path = __importStar(require$$1$3);
 	const ioUtil = __importStar(requireIoUtil());
 	/**
 	 * Copies a file or folder.
@@ -2298,7 +2300,7 @@ function requireToolrunner () {
 	const os = __importStar(require$$0$1);
 	const events = __importStar(require$$4);
 	const child = __importStar(require$$2$1);
-	const path = __importStar(require$$1$2);
+	const path = __importStar(require$$1$3);
 	const io = __importStar(requireIo());
 	const ioUtil = __importStar(requireIoUtil());
 	const timers_1 = require$$6;
@@ -3142,7 +3144,7 @@ function requireCore () {
 		const file_command_1 = requireFileCommand();
 		const utils_1 = requireUtils$1();
 		const os = __importStar(require$$0$1);
-		const path = __importStar(require$$1$2);
+		const path = __importStar(require$$1$3);
 		const oidc_utils_1 = requireOidcUtils();
 		/**
 		 * The code to exit an action
@@ -4318,7 +4320,7 @@ function requireDelayed_stream () {
 	if (hasRequiredDelayed_stream) return delayed_stream;
 	hasRequiredDelayed_stream = 1;
 	var Stream = stream.Stream;
-	var util = require$$1$1;
+	var util = require$$1$2;
 
 	delayed_stream = DelayedStream;
 	function DelayedStream() {
@@ -4433,7 +4435,7 @@ var hasRequiredCombined_stream;
 function requireCombined_stream () {
 	if (hasRequiredCombined_stream) return combined_stream;
 	hasRequiredCombined_stream = 1;
-	var util = require$$1$1;
+	var util = require$$1$2;
 	var Stream = stream.Stream;
 	var DelayedStream = requireDelayed_stream();
 
@@ -15390,7 +15392,7 @@ function requireMimeTypes () {
 		 */
 
 		var db = requireMimeDb();
-		var extname = require$$1$2.extname;
+		var extname = require$$1$3.extname;
 
 		/**
 		 * Module variables.
@@ -16055,12 +16057,12 @@ function requireForm_data () {
 	if (hasRequiredForm_data) return form_data;
 	hasRequiredForm_data = 1;
 	var CombinedStream = requireCombined_stream();
-	var util = require$$1$1;
-	var path = require$$1$2;
+	var util = require$$1$2;
+	var path = require$$1$3;
 	var http = require$$2;
 	var https = require$$3;
 	var parseUrl = require$$0$4.parse;
-	var fs = require$$0$2;
+	var fs = require$$1;
 	var Stream = stream.Stream;
 	var mime = requireMimeTypes();
 	var asynckit = requireAsynckit();
@@ -19334,7 +19336,7 @@ var httpAdapter = isHttpAdapterSupported && function httpAdapter(config) {
 
       if (!headers.hasContentLength()) {
         try {
-          const knownLength = await require$$1$1.promisify(data.getLength).call(data);
+          const knownLength = await require$$1$2.promisify(data.getLength).call(data);
           Number.isFinite(knownLength) && knownLength >= 0 && headers.setContentLength(knownLength);
           /*eslint no-empty:0*/
         } catch (e) {
@@ -21809,7 +21811,7 @@ var hasRequiredUtil_inspect;
 function requireUtil_inspect () {
 	if (hasRequiredUtil_inspect) return util_inspect;
 	hasRequiredUtil_inspect = 1;
-	util_inspect = require$$1$1.inspect;
+	util_inspect = require$$1$2.inspect;
 	return util_inspect;
 }
 
